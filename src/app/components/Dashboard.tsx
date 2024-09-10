@@ -15,7 +15,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Card, CardContent } from "@/components/ui/card"
-import { LayoutDashboard, Menu, Package, ShoppingCart, Plus, Trash2, ChevronDown, ChevronUp, Edit } from 'lucide-react'
+import { LayoutDashboard, Menu, Package, ShoppingCart, Plus, Trash2, ChevronDown, ChevronUp, Edit, Search, ArrowUpDown, BarChart } from 'lucide-react'
 import { Toaster, toast } from 'react-hot-toast'
 import { formatPrice } from '@/lib/utils'
 import {
@@ -27,6 +27,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Pagination } from "@/components/ui/pagination"
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
+import { Line, Bar } from 'react-chartjs-2'
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
 interface Product {
   id: number
@@ -74,10 +88,17 @@ export default function Dashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
+  const [sortColumn, setSortColumn] = useState<keyof Product>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [salesData, setSalesData] = useState<{ date: string; total: number }[]>([])
 
   useEffect(() => {
     fetchProducts()
     fetchSales()
+    fetchSalesData()
   }, [])
 
   async function fetchProducts() {
@@ -118,6 +139,30 @@ export default function Dashboard() {
     }
   }
 
+  async function fetchSalesData() {
+    const { data, error } = await supabase
+      .from('sales')
+      .select('created_at, total')
+      .order('created_at', { ascending: true })
+    
+    if (error) {
+      console.error('Error al obtener datos de ventas:', error)
+      toast.error('No se pudieron obtener los datos de ventas')
+    } else if (data) {
+      const groupedData = data.reduce((acc, sale) => {
+        const date = new Date(sale.created_at).toLocaleDateString()
+        if (!acc[date]) {
+          acc[date] = 0
+        }
+        acc[date] += sale.total
+        return acc
+      }, {} as Record<string, number>)
+
+      const formattedData = Object.entries(groupedData).map(([date, total]) => ({ date, total }))
+      setSalesData(formattedData)
+    }
+  }
+
   async function handleProductSubmit(e: React.FormEvent) {
     e.preventDefault()
     const { data, error } = await supabase.from('products').insert([newProduct])
@@ -133,6 +178,20 @@ export default function Dashboard() {
 
   async function handleSaleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    
+    // Check if there's enough stock for each product
+    for (const item of saleItems) {
+      const product = products.find(p => p.id === item.product_id)
+      if (!product) {
+        toast.error(`Producto no encontrado: ID ${item.product_id}`)
+        return
+      }
+      if (product.stock < item.quantity) {
+        toast.error(`Stock insuficiente para ${product.name}. Disponible: ${product.stock}`)
+        return
+      }
+    }
+
     const total = saleItems.reduce((sum, item) => {
       const product = products.find(p => p.id === item.product_id)
       return sum + (product ? product.price * item.quantity : 0)
@@ -165,10 +224,33 @@ export default function Dashboard() {
     if (productSaleErrors.length > 0) {
       console.error('Errores al añadir registros de product_sale:', productSaleErrors)
       toast.error('No se pudieron registrar algunas ventas de productos')
+      return
+    }
+
+    // Update product stock
+    const stockUpdatePromises = saleItems.map(item => {
+      const product = products.find(p => p.id === item.product_id)
+      if (product) {
+        return supabase
+          .from('products')
+          .update({ stock: product.stock - item.quantity })
+          .eq('id', item.product_id)
+      }
+      return Promise.resolve()
+    })
+
+    const stockUpdateResults = await Promise.all(stockUpdatePromises)
+    const stockUpdateErrors = stockUpdateResults.filter(result => result.error)
+
+    if (stockUpdateErrors.length > 0) {
+      console.error('Errores al actualizar el stock:', stockUpdateErrors)
+      toast.error('No se pudo actualizar el stock de algunos productos')
     } else {
+      fetchProducts()
       fetchSales()
+      fetchSalesData()
       setSaleItems([{ product_id: 0, quantity: 1 }])
-      toast.success('Venta registrada exitosamente')
+      toast.success('Venta registrada y stock actualizado exitosamente')
     }
   }
 
@@ -250,6 +332,33 @@ export default function Dashboard() {
     )
   }
 
+  const handleSort = (column: keyof Product) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1
+    if (a[sortColumn] > b[sortColumn]) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentProducts = sortedProducts.slice(indexOfFirstItem, indexOfLastItem)
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+
   const Sidebar = () => (
     <nav className="space-y-2">
       <Button
@@ -268,8 +377,40 @@ export default function Dashboard() {
         <ShoppingCart className="mr-2 h-4 w-4" />
         Ventas
       </Button>
+      <Button
+        variant={activeTab === 'analytics' ? "default" : "ghost"}
+        className="w-full justify-start"
+        onClick={() => handleTabChange('analytics')}
+      >
+        <BarChart className="mr-2 h-4 w-4" />
+        Análisis
+      </Button>
     </nav>
   )
+
+  const salesChartData = {
+    labels: salesData.map(d => d.date),
+    datasets: [
+      {
+        label: 'Ventas por día',
+        data: salesData.map(d => d.total),
+        fill: false,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+      }
+    ]
+  }
+
+  const productStockChartData = {
+    labels: products.map(p => p.name),
+    datasets: [
+      {
+        label: 'Stock de productos',
+        data: products.map(p => p.stock),
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+      }
+    ]
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
@@ -350,7 +491,7 @@ export default function Dashboard() {
                             type="number"
                             step="1"
                             value={newProduct.stock}
-                            onChange={(e) => setNewProduct({ ...newProduct, stock: parseFloat(e.target.value) })}
+                            onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) })}
                             required
                           />
                         </div>
@@ -384,21 +525,43 @@ export default function Dashboard() {
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
+              <div className="mb-4 flex justify-between items-center">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar productos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Precio</TableHead>
-                      <TableHead>Stock</TableHead>
+                      <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
+                        Nombre {sortColumn === 'name' && <ArrowUpDown className="inline ml-1" />}
+                      </TableHead>
+                      <TableHead onClick={() => handleSort('code')} className="cursor-pointer">
+                        Código {sortColumn === 'code' && <ArrowUpDown className="inline ml-1" />}
+                      </TableHead>
+                      <TableHead onClick={() => handleSort('price')} className="cursor-pointer">
+                        Precio {sortColumn === 'price' && <ArrowUpDown className="inline ml-1" />}
+                      </TableHead>
+                      <TableHead onClick={() => handleSort('stock')} className="cursor-pointer">
+                        Stock {sortColumn === 'stock' && <ArrowUpDown className="inline ml-1" />}
+                      </TableHead>
                       <TableHead>Unidad</TableHead>
-                      <TableHead>Categoría</TableHead>
+                      <TableHead onClick={() => handleSort('category')} className="cursor-pointer">
+                        Categoría {sortColumn === 'category' && <ArrowUpDown className="inline ml-1" />}
+                      </TableHead>
                       <TableHead>Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products.map((product) => (
+                    {currentProducts.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>{product.name}</TableCell>
                         <TableCell>{product.code}</TableCell>
@@ -433,6 +596,11 @@ export default function Dashboard() {
                   </TableBody>
                 </Table>
               </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(sortedProducts.length / itemsPerPage)}
+                onPageChange={paginate}
+              />
             </div>
           )}
           {activeTab === 'sales' && (
@@ -462,7 +630,7 @@ export default function Dashboard() {
                               <SelectContent>
                                 {products.map((product) => (
                                   <SelectItem key={product.id} value={product.id.toString()}>
-                                    {product.name}
+                                    {product.name} (Stock: {product.stock})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -542,6 +710,25 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            </div>
+          )}
+          {activeTab === 'analytics' && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Análisis</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent>
+                    <h3 className="text-lg font-semibold mb-2">Ventas por Día</h3>
+                    <Line data={salesChartData} options={{ responsive: true, maintainAspectRatio: true }} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent>
+                    <h3 className="text-lg font-semibold mb-2">Stock de Productos</h3>
+                    <Bar data={productStockChartData} options={{ responsive: true, maintainAspectRatio: true }} />
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
