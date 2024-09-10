@@ -144,7 +144,7 @@ export default function Dashboard() {
       .from('sales')
       .select('created_at, total')
       .order('created_at', { ascending: true })
-    
+
     if (error) {
       console.error('Error al obtener datos de ventas:', error)
       toast.error('No se pudieron obtener los datos de ventas')
@@ -178,7 +178,7 @@ export default function Dashboard() {
 
   async function handleSaleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
+
     // Check if there's enough stock for each product
     for (const item of saleItems) {
       const product = products.find(p => p.id === item.product_id)
@@ -210,7 +210,7 @@ export default function Dashboard() {
 
     const saleId = saleData[0].id
 
-    const productSalePromises = saleItems.map(item => 
+    const productSalePromises = saleItems.map(item =>
       supabase.from('product_sale').insert({
         product_id: item.product_id,
         sale_id: saleId,
@@ -240,7 +240,12 @@ export default function Dashboard() {
     })
 
     const stockUpdateResults = await Promise.all(stockUpdatePromises)
-    const stockUpdateErrors = stockUpdateResults.filter(result => result.error)
+    function hasError(result: any): result is { error: any } {
+      return result !== undefined && result !== null && typeof result.error !== 'undefined';
+    }
+
+    const stockUpdateErrors = stockUpdateResults.filter(hasError);
+
 
     if (stockUpdateErrors.length > 0) {
       console.error('Errores al actualizar el stock:', stockUpdateErrors)
@@ -275,7 +280,7 @@ export default function Dashboard() {
       console.error('Error al actualizar producto:', error)
       toast.error('No se pudo actualizar el producto')
     } else if (data) {
-      setProducts(prevProducts => 
+      setProducts(prevProducts =>
         prevProducts.map(p => p.id === editingProduct.id ? data[0] : p)
       )
       setIsEditModalOpen(false)
@@ -297,7 +302,7 @@ export default function Dashboard() {
       console.error('Error al eliminar producto:', error)
       toast.error('No se pudo eliminar el producto')
     } else {
-      setProducts(prevProducts => 
+      setProducts(prevProducts =>
         prevProducts.filter(p => p.id !== productToDelete.id)
       )
       setIsDeleteModalOpen(false)
@@ -325,8 +330,8 @@ export default function Dashboard() {
   }
 
   const toggleSaleExpansion = (saleId: number) => {
-    setExpandedSales(prev => 
-      prev.includes(saleId) 
+    setExpandedSales(prev =>
+      prev.includes(saleId)
         ? prev.filter(id => id !== saleId)
         : [...prev, saleId]
     )
@@ -747,7 +752,7 @@ export default function Dashboard() {
                 <Input
                   id="edit-name"
                   value={editingProduct?.name || ''}
-                  onChange={(e) => setEditingProduct(prev => prev ? {...prev, name: e.target.value} : null)}
+                  onChange={(e) => setEditingProduct(prev => prev ? { ...prev, name: e.target.value } : null)}
                   required
                 />
               </div>
@@ -756,7 +761,7 @@ export default function Dashboard() {
                 <Input
                   id="edit-code"
                   value={editingProduct?.code || ''}
-                  onChange={(e) => setEditingProduct(prev => prev ? {...prev, code: e.target.value} : null)}
+                  onChange={(e) => setEditingProduct(prev => prev ? { ...prev, code: e.target.value } : null)}
                   required
                 />
               </div>
@@ -767,7 +772,7 @@ export default function Dashboard() {
                   type="number"
                   step="0.01"
                   value={editingProduct?.price || 0}
-                  onChange={(e) => setEditingProduct(prev => prev ? {...prev, price: parseFloat(e.target.value)} : null)}
+                  onChange={(e) => setEditingProduct(prev => prev ? { ...prev, price: parseFloat(e.target.value) } : null)}
                   required
                 />
               </div>
@@ -778,7 +783,7 @@ export default function Dashboard() {
                   type="number"
                   step="1"
                   value={editingProduct?.stock || 0}
-                  onChange={(e) => setEditingProduct(prev => prev ? {...prev, stock: parseInt(e.target.value)} : null)}
+                  onChange={(e) => setEditingProduct(prev => prev ? { ...prev, stock: parseInt(e.target.value) } : null)}
                   required
                 />
               </div>
@@ -786,7 +791,7 @@ export default function Dashboard() {
                 <Label htmlFor="edit-unit">Unidad</Label>
                 <Select
                   value={editingProduct?.unit || ''}
-                  onValueChange={(value) => setEditingProduct(prev => prev ? {...prev, unit: value} : null)}
+                  onValueChange={(value) => setEditingProduct(prev => prev ? { ...prev, unit: value } : null)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar unidad" />
@@ -802,7 +807,7 @@ export default function Dashboard() {
                 <Input
                   id="edit-category"
                   value={editingProduct?.category || ''}
-                  onChange={(e) => setEditingProduct(prev => prev ? {...prev, category: e.target.value} : null)}
+                  onChange={(e) => setEditingProduct(prev => prev ? { ...prev, category: e.target.value } : null)}
                   required
                 />
               </div>
