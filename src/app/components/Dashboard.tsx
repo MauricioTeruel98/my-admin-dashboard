@@ -29,6 +29,7 @@ import {
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
 import { PaginationDemo } from './PaginationDemo'
+import { PostgrestSingleResponse } from '@supabase/supabase-js'
 
 ChartJS.register(
   CategoryScale,
@@ -237,7 +238,9 @@ export default function Dashboard() {
     })
 
     const stockUpdateResults = await Promise.all(stockUpdatePromises)
-    const stockUpdateErrors = stockUpdateResults.filter(result => result.error)
+    const stockUpdateErrors = stockUpdateResults
+      .filter((result): result is PostgrestSingleResponse<null> => result !== undefined && result !== null && 'error' in result)
+      .filter(result => result.error);
 
     if (stockUpdateErrors.length > 0) {
       console.error('Errores al actualizar el stock:', stockUpdateErrors)
