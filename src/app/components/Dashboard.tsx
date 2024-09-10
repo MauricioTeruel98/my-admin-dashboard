@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/supabase/supabase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,9 +25,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { Pagination } from "@/components/ui/pagination"
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
 import { PaginationDemo } from './PaginationDemo'
@@ -69,14 +67,6 @@ interface Sale {
   }[]
 }
 
-interface SalesWithItems extends Sale {
-  items: {
-    product: Product;
-    quantity: number;
-    subtotal: number;
-  }[];
-}
-
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('products')
   const [products, setProducts] = useState<Product[]>([])
@@ -91,18 +81,18 @@ export default function Dashboard() {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
+  const [itemsPerPage] = useState(5)
   const [sortColumn, setSortColumn] = useState<keyof Product>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [salesData, setSalesData] = useState<{ date: string; total: number }[]>([])
 
-  useEffect(() => {
-    fetchProducts()
-    fetchSales()
-    fetchSalesData()
-  }, [])
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
-  async function fetchProducts() {
+
+
+  const fetchProducts = useCallback(async () => {
     const { data, error } = await supabase.from('products').select('*')
     if (error) {
       console.error('Error al obtener productos:', error)
@@ -110,9 +100,9 @@ export default function Dashboard() {
     } else if (data) {
       setProducts(data)
     }
-  }
+  }, [])
 
-  async function fetchSales() {
+  const fetchSales = useCallback(async () => {
     const { data, error } = await supabase
       .from('sales')
       .select(`
@@ -138,9 +128,9 @@ export default function Dashboard() {
       }))
       setSales(salesWithItems)
     }
-  }
+  }, [])
 
-  async function fetchSalesData() {
+  const fetchSalesData = useCallback(async () => {
     const { data, error } = await supabase
       .from('sales')
       .select('created_at, total')
@@ -162,9 +152,15 @@ export default function Dashboard() {
       const formattedData = Object.entries(groupedData).map(([date, total]) => ({ date, total }))
       setSalesData(formattedData)
     }
-  }
+  }, [])
 
-  async function handleProductSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    fetchProducts()
+    fetchSales()
+    fetchSalesData()
+  }, [fetchProducts, fetchSales, fetchSalesData])
+
+  const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const { data, error } = await supabase.from('products').insert([newProduct])
     if (error) {
@@ -177,7 +173,7 @@ export default function Dashboard() {
     }
   }
 
-  async function handleSaleSubmit(e: React.FormEvent) {
+  const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     // Check if there's enough stock for each product
@@ -241,12 +237,7 @@ export default function Dashboard() {
     })
 
     const stockUpdateResults = await Promise.all(stockUpdatePromises)
-    function hasError(result: any): result is { error: any } {
-      return result !== undefined && result !== null && typeof result.error !== 'undefined';
-    }
-
-    const stockUpdateErrors = stockUpdateResults.filter(hasError);
-
+    const stockUpdateErrors = stockUpdateResults.filter(result => result.error)
 
     if (stockUpdateErrors.length > 0) {
       console.error('Errores al actualizar el stock:', stockUpdateErrors)
@@ -260,7 +251,7 @@ export default function Dashboard() {
     }
   }
 
-  async function handleProductEdit(e: React.FormEvent) {
+  const handleProductEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingProduct) return
 
@@ -291,7 +282,7 @@ export default function Dashboard() {
     }
   }
 
-  async function handleProductDelete() {
+  const handleProductDelete = async () => {
     if (!productToDelete) return
 
     const { error } = await supabase
@@ -362,8 +353,6 @@ export default function Dashboard() {
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentProducts = sortedProducts.slice(indexOfFirstItem, indexOfLastItem)
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   const Sidebar = () => (
     <nav className="space-y-2">
@@ -602,12 +591,12 @@ export default function Dashboard() {
                   </TableBody>
                 </Table>
               </div>
-              {/* <Pagination
+              <PaginationDemo
+                totalItems={sortedProducts.length}
+                itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
-                totalPages={Math.ceil(sortedProducts.length / itemsPerPage)}
-                onPageChange={paginate}
-              /> */}
-              <PaginationDemo totalItems={Math.ceil(sortedProducts.length)} itemsPerPage={itemsPerPage} />
+                onPageChange={handlePageChange}
+              />
             </div>
           )}
           {activeTab === 'sales' && (
