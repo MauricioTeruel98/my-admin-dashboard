@@ -30,6 +30,7 @@ import {
 import { Pagination } from "@/components/ui/pagination"
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
+import { PaginationDemo } from './PaginationDemo'
 
 ChartJS.register(
   CategoryScale,
@@ -601,11 +602,12 @@ export default function Dashboard() {
                   </TableBody>
                 </Table>
               </div>
-              <Pagination
+              {/* <Pagination
                 currentPage={currentPage}
                 totalPages={Math.ceil(sortedProducts.length / itemsPerPage)}
                 onPageChange={paginate}
-              />
+              /> */}
+              <PaginationDemo totalItems={Math.ceil(sortedProducts.length)} itemsPerPage={itemsPerPage} />
             </div>
           )}
           {activeTab === 'sales' && (
