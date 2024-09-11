@@ -52,9 +52,14 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
       return sum + (product ? product.price * item.quantity : 0)
     }, 0)
 
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
     const { data: saleData, error: saleError } = await supabase
       .from('sales')
-      .insert([{ total }])
+      .insert([{ total, user_id: user?.id }])
       .select()
 
     if (saleError) {

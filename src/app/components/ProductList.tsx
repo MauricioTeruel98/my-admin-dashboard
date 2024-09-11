@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Edit, Trash2, Search, ArrowUpDown } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import Pagination from './Pagination'
 
 interface ProductListProps {
   products: Product[]
@@ -51,6 +52,8 @@ export default function ProductList({
       setSortDirection('asc')
     }
   }
+
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage)
 
   return (
     <div>
@@ -125,23 +128,11 @@ export default function ProductList({
           </TableBody>
         </Table>
       </div>
-      <div className="mt-4 flex justify-center">
-        <Button
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-        >
-          Anterior
-        </Button>
-        <span className="mx-4">
-          Página {currentPage} de {Math.ceil(sortedProducts.length / itemsPerPage)}
-        </span>
-        <Button
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(sortedProducts.length / itemsPerPage)))}
-          disabled={currentPage === Math.ceil(sortedProducts.length / itemsPerPage)}
-        >
-          Siguiente
-        </Button>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   )
 }

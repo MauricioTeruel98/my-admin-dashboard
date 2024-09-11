@@ -1,6 +1,7 @@
 import { LayoutDashboard, Menu } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import LogoutButton from './LogoutButton'
 
 interface HeaderProps {
   isDrawerOpen: boolean
@@ -27,6 +28,7 @@ export default function Header({ isDrawerOpen, setIsDrawerOpen }: HeaderProps) {
           </div>
         </SheetContent>
       </Sheet>
+      <LogoutButton />
     </header>
   )
 }
