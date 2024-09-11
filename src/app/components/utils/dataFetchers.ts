@@ -150,7 +150,7 @@ export async function deleteProduct(
   return true;
 }
 
-export async function addSale(
+/*export async function addSale(
   supabase: SupabaseClient,
   sale: Omit<Sale, "id">,
   items: { product_id: number; quantity: number }[]
@@ -182,4 +182,4 @@ export async function addSale(
   }
 
   return saleData;
-}
+}*/
