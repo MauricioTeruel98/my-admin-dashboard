@@ -17,18 +17,24 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
     price: 0,
     unit: 'unidad',
     category: '',
-    stock: 0
+    stock: 0,
+    user_id: ''
   })
 
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const { data, error } = await supabase.from('products').insert([newProduct])
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    
+    const { data, error } = await supabase.from('products').insert([{...newProduct, user_id: user?.id}])
     if (error) {
       console.error('Error al añadir producto:', error)
       toast.error('No se pudo añadir el producto')
     } else {
       refreshData()
-      setNewProduct({ name: '', code: '', price: 0, unit: 'unidad', category: '', stock: 0 })
+      setNewProduct({ name: '', code: '', price: 0, unit: 'unidad', category: '', stock: 0, user_id: '' })
       toast.success('Producto añadido exitosamente')
     }
   }
