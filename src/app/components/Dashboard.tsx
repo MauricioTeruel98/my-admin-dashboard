@@ -40,9 +40,21 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <Toaster position="top-right" />
-      <Header isDrawerOpen={isDrawerOpen} setIsDrawerOpen={setIsDrawerOpen} />
+      <Header 
+        isDrawerOpen={isDrawerOpen} 
+        setIsDrawerOpen={setIsDrawerOpen}
+        activeTab={activeTab}
+        handleTabChange={handleTabChange}
+      />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeTab={activeTab} handleTabChange={handleTabChange} isDrawerOpen={isDrawerOpen} setIsDrawerOpen={setIsDrawerOpen} />
+        <div className='hidden md:flex'>
+        <Sidebar 
+          activeTab={activeTab} 
+          handleTabChange={handleTabChange} 
+          isDrawerOpen={isDrawerOpen} 
+          setIsDrawerOpen={setIsDrawerOpen} 
+        />
+        </div>
         <main className="flex-1 p-4 overflow-auto">
           {activeTab === 'products' && <ProductManagement products={products} refreshData={refreshData} />}
           {activeTab === 'sales' && <SalesManagement sales={sales} products={products} refreshData={refreshData} />}

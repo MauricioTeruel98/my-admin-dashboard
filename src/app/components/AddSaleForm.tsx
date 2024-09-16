@@ -1,13 +1,16 @@
-import { useState } from 'react'
+'use client'
+
+import { useState, useMemo } from 'react'
 import { supabase } from '@/supabase/supabase'
 import { toast } from 'react-hot-toast'
 import { Product, SaleItem } from '../types'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, Search } from 'lucide-react'
 import { PostgrestSingleResponse } from '@supabase/supabase-js'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatPrice } from '@/lib/utils'
 
 interface AddSaleFormProps {
   products: Product[]
@@ -15,21 +18,40 @@ interface AddSaleFormProps {
 }
 
 export default function AddSaleForm({ products, refreshData }: AddSaleFormProps) {
-  const [saleItems, setSaleItems] = useState<SaleItem[]>([{ product_id: 0, quantity: 1 }])
+  const [saleItems, setSaleItems] = useState<SaleItem[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
 
-  const addSaleItem = () => {
-    setSaleItems([...saleItems, { product_id: 0, quantity: 1 }])
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [products, searchTerm])
+
+  const addSaleItem = (product: Product) => {
+    const existingItem = saleItems.find(item => item.product_id === product.id)
+    if (existingItem) {
+      updateSaleItem(existingItem.product_id, 'quantity', existingItem.quantity + 1)
+    } else {
+      setSaleItems([...saleItems, { product_id: product.id, quantity: 1 }])
+    }
   }
 
-  const removeSaleItem = (index: number) => {
-    setSaleItems(saleItems.filter((_, i) => i !== index))
+  const removeSaleItem = (productId: number) => {
+    setSaleItems(saleItems.filter(item => item.product_id !== productId))
   }
 
-  const updateSaleItem = (index: number, field: keyof SaleItem, value: number) => {
-    const newItems = [...saleItems]
-    newItems[index][field] = value
-    setSaleItems(newItems)
+  const updateSaleItem = (productId: number, field: keyof SaleItem, value: number) => {
+    setSaleItems(saleItems.map(item => 
+      item.product_id === productId ? { ...item, [field]: value } : item
+    ))
   }
+
+  const totalSale = useMemo(() => {
+    return saleItems.reduce((sum, item) => {
+      const product = products.find(p => p.id === item.product_id)
+      return sum + (product ? product.price * item.quantity : 0)
+    }, 0)
+  }, [saleItems, products])
 
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,11 +69,6 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
       }
     }
 
-    const total = saleItems.reduce((sum, item) => {
-      const product = products.find(p => p.id === item.product_id)
-      return sum + (product ? product.price * item.quantity : 0)
-    }, 0)
-
     const {
       data: { user },
       error: userError,
@@ -59,7 +76,7 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
 
     const { data: saleData, error: saleError } = await supabase
       .from('sales')
-      .insert([{ total, user_id: user?.id }])
+      .insert([{ total: totalSale, user_id: user?.id }])
       .select()
 
     if (saleError) {
@@ -70,13 +87,15 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
 
     const saleId = saleData[0].id
 
-    const productSalePromises = saleItems.map(item =>
-      supabase.from('product_sale').insert({
+    const productSalePromises = saleItems.map(item => {
+      const product = products.find(p => p.id === item.product_id)
+      return supabase.from('product_sale').insert({
         product_id: item.product_id,
         sale_id: saleId,
-        quantity: item.quantity
+        quantity: item.quantity,
+        subtotal: product ? product.price * item.quantity : 0
       })
-    )
+    })
 
     const productSaleResults = await Promise.all(productSalePromises)
     const productSaleErrors = productSaleResults.filter(result => result.error)
@@ -101,63 +120,95 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
 
     const stockUpdateResults = await Promise.all(stockUpdatePromises)
     const stockUpdateErrors = stockUpdateResults
-    .filter((result): result is PostgrestSingleResponse<null> => result !== undefined && result !== null && 'error' in result)
-    .filter(result => result.error);
-  
+      .filter((result): result is PostgrestSingleResponse<null> => result !== undefined && result !== null && 'error' in result)
+      .filter(result => result.error);
 
     if (stockUpdateErrors.length > 0) {
       console.error('Errores al actualizar el stock:', stockUpdateErrors)
       toast.error('No se pudo actualizar el stock de algunos productos')
     } else {
       refreshData()
-      setSaleItems([{ product_id: 0, quantity: 1 }])
+      setSaleItems([])
+      setSearchTerm('')
       toast.success('Venta registrada y stock actualizado exitosamente')
     }
   }
 
   return (
-    <form onSubmit={handleSaleSubmit} className="space-y-4">
-      {saleItems.map((item, index) => (
-        <div key={index} className="flex items-end space-x-2">
-          <div className="flex-1">
-            <Label htmlFor={`product-${index}`}>Producto</Label>
-            <Select
-              value={item.product_id.toString()}
-              onValueChange={(value) => updateSaleItem(index, 'product_id', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar producto" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id.toString()}>
-                    {product.name} (Stock: {product.stock})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor={`quantity-${index}`}>Cantidad</Label>
+    <Card>
+      <CardHeader>
+        <CardTitle>Nueva Venta</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Search className="text-gray-400" />
             <Input
-              id={`quantity-${index}`}
-              type="number"
-              value={item.quantity}
-              onChange={(e) => updateSaleItem(index, 'quantity', parseInt(e.target.value))}
-              required
-              min="1"
+              type="text"
+              placeholder="Buscar producto..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
             />
           </div>
-          <Button type="button" variant="destructive" size="icon" onClick={() => removeSaleItem(index)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredProducts.map((product) => (
+              <Button
+                key={product.id}
+                onClick={() => addSaleItem(product)}
+                variant="outline"
+                className="h-auto py-2 px-3 flex flex-col items-start text-left"
+                disabled={product.stock === 0}
+              >
+                <span className="font-semibold">{product.name}</span>
+                <span className="text-sm text-gray-500">Stock: {product.stock}</span>
+                <span className="text-sm font-medium">${product.price.toFixed(2)}</span>
+              </Button>
+            ))}
+          </div>
+          {saleItems.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="font-semibold">Productos seleccionados:</h3>
+              {saleItems.map((item) => {
+                const product = products.find(p => p.id === item.product_id)
+                const subtotal = product ? product.price * item.quantity : 0
+                return (
+                  <div key={item.product_id} className="flex items-center justify-between border-b pb-2">
+                    <span>{product?.name}</span>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updateSaleItem(item.product_id, 'quantity', parseInt(e.target.value))}
+                        className="w-20"
+                        min="1"
+                        max={product?.stock}
+                      />
+                      <span className="w-24 text-right"><b>Subtotal:</b> {formatPrice(subtotal)}</span>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => removeSaleItem(item.product_id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
-      ))}
-      <Button type="button" variant="outline" onClick={addSaleItem}>
-        <Plus className="h-4 w-4 mr-2" />
-        Añadir Producto
-      </Button>
-      <Button type="submit">Registrar Venta</Button>
-    </form>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <div className="text-lg font-semibold">
+          Total: ${totalSale.toFixed(2)}
+        </div>
+        <Button onClick={handleSaleSubmit} disabled={saleItems.length === 0}>
+          Registrar Venta
+        </Button>
+      </CardFooter>
+    </Card>
   )
 }
