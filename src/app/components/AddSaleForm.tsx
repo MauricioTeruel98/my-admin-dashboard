@@ -18,12 +18,15 @@ interface AddSaleFormProps {
 export default function AddSaleForm({ products, refreshData }: AddSaleFormProps) {
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [visibleProducts, setVisibleProducts] = useState(6)
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [products, searchTerm])
+
+  const displayedProducts = filteredProducts.slice(0, visibleProducts)
 
   const addSaleItem = (product: Product) => {
     const existingItem = saleItems.find(item => item.product_id === product.id)
@@ -134,6 +137,10 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
     toast.success('Venta registrada y stock actualizado exitosamente')
   }
 
+  const loadMoreProducts = () => {
+    setVisibleProducts(prev => prev + 6)
+  }
+
   return (
     <Card className="bg-card text-card-foreground">
       <CardHeader>
@@ -151,8 +158,8 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
               className="flex-1 border-primary"
             />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {displayedProducts.map((product) => (
               <Button
                 key={product.id}
                 onClick={() => addSaleItem(product)}
@@ -166,6 +173,13 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
               </Button>
             ))}
           </div>
+          {filteredProducts.length > visibleProducts && (
+            <div className="text-center mt-4">
+              <Button onClick={loadMoreProducts} variant="outline">
+                Cargar más productos
+              </Button>
+            </div>
+          )}
           {saleItems.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold">Productos seleccionados:</h3>

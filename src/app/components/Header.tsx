@@ -12,18 +12,18 @@ interface HeaderProps {
 
 export default function Header({ isDrawerOpen, setIsDrawerOpen, activeTab, handleTabChange }: HeaderProps) {
   return (
-    <header className="bg-background shadow-md p-4 flex justify-between items-center">
+    <header className="bg-amber-950 shadow-md p-4 flex justify-between items-center border-b border-amber-900">
       <div className="flex items-center">
-        <LayoutDashboard className="h-6 w-6 mr-2 text-primary" />
-        <h1 className="text-xl font-bold text-foreground">Almacén Ema</h1>
+        <LayoutDashboard className="h-6 w-6 mr-2 text-amber-500" />
+        <h1 className="text-xl font-bold text-amber-100">Almacén Ema</h1>
       </div>
       <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden">
+          <Button variant="ghost" size="icon" className="md:hidden text-amber-100 hover:text-amber-200">
             <Menu className="h-6 w-6" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0 bg-background">
+        <SheetContent side="left" className="w-64 p-0 bg-amber-950 border-r border-amber-900">
           <Sidebar 
             activeTab={activeTab} 
             handleTabChange={handleTabChange} 
