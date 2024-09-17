@@ -57,11 +57,11 @@ export default function SalesManagement({ products, refreshData }: SalesManageme
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Gestión de Ventas</h2>
+    <div className="flex flex-col h-full overflow-hidden">
+      <h2 className="text-xl md:text-2xl font-bold mb-4">Gestión de Ventas</h2>
       <Accordion type="single" collapsible className="mb-4">
         <AccordionItem value="record-sale">
-          <AccordionTrigger>
+          <AccordionTrigger className="text-sm md:text-base">
             <div className="flex items-center">
               <Plus className="h-4 w-4 mr-2" />
               Registrar Nueva Venta
@@ -72,7 +72,9 @@ export default function SalesManagement({ products, refreshData }: SalesManageme
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      <SalesList sales={sales} expandedSales={expandedSales} toggleSaleExpansion={toggleSaleExpansion} />
+      <div className="flex-grow overflow-auto">
+        <SalesList sales={sales} expandedSales={expandedSales} toggleSaleExpansion={toggleSaleExpansion} />
+      </div>
     </div>
   )
 }

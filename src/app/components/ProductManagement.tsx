@@ -19,11 +19,11 @@ export default function ProductManagement({ products, refreshData }: ProductMana
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4 text-foreground">Gestión de Productos</h2>
+    <div className="flex flex-col h-full overflow-hidden">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 text-foreground">Gestión de Productos</h2>
       <Accordion type="single" collapsible className="mb-4">
         <AccordionItem value="add-product">
-          <AccordionTrigger className="text-foreground">
+          <AccordionTrigger className="text-sm md:text-base text-foreground">
             <div className="flex items-center">
               <Plus className="h-4 w-4 mr-2 text-primary" />
               Añadir Nuevo Producto
@@ -34,13 +34,15 @@ export default function ProductManagement({ products, refreshData }: ProductMana
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      <ProductList
-        products={products}
-        setEditingProduct={setEditingProduct}
-        setIsEditModalOpen={setIsEditModalOpen}
-        setProductToDelete={setProductToDelete}
-        setIsDeleteModalOpen={setIsDeleteModalOpen}
-      />
+      <div className="flex-grow overflow-auto">
+        <ProductList
+          products={products}
+          setEditingProduct={setEditingProduct}
+          setIsEditModalOpen={setIsEditModalOpen}
+          setProductToDelete={setProductToDelete}
+          setIsDeleteModalOpen={setIsDeleteModalOpen}
+        />
+      </div>
       <EditProductModal
         editingProduct={editingProduct}
         isEditModalOpen={isEditModalOpen}

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Edit, Trash2, Search, ArrowUpDown } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import Pagination from './Pagination'
+import { Card, CardContent } from "@/components/ui/card"
 
 interface ProductListProps {
   products: Product[]
@@ -59,7 +60,7 @@ export default function ProductList({
 
   return (
     <div>
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -67,11 +68,11 @@ export default function ProductList({
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 bg-input text-foreground border-primary"
+            className="pl-8 bg-input text-foreground border-primary w-full"
           />
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -131,6 +132,45 @@ export default function ProductList({
             ))}
           </TableBody>
         </Table>
+      </div>
+      <div className="md:hidden space-y-4">
+        {currentProducts.map((product) => (
+          <Card key={product.id}>
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-foreground">{product.name}</h3>
+              <p className="text-sm text-muted-foreground">Código: {product.code}</p>
+              <p className="text-sm text-muted-foreground">Precio: {formatPrice(product.price)}</p>
+              <p className="text-sm text-muted-foreground">Stock: {product.stock} {product.unit}</p>
+              <p className="text-sm text-muted-foreground">Categoría: {product.category}</p>
+              <div className="mt-2 flex justify-end space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditingProduct(product)
+                    setIsEditModalOpen(true)
+                  }}
+                  className="text-primary"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setProductToDelete(product)
+                    setIsDeleteModalOpen(true)
+                  }}
+                  className="text-primary"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Eliminar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
       <Pagination
         currentPage={currentPage}

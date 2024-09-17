@@ -153,7 +153,7 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-card text-card-foreground">
           <CardContent>
             <h3 className="text-lg font-semibold mb-2 text-foreground">Ventas por Día</h3>

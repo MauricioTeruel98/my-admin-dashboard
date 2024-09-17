@@ -12,7 +12,6 @@ interface SalesListProps {
 }
 
 export default function SalesList({ sales, expandedSales, toggleSaleExpansion }: SalesListProps) {
-  // Agrupar ventas por fecha
   const groupedSales = sales.reduce((acc, sale) => {
     const date = new Date(sale.created_at).toLocaleDateString()
     if (!acc[date]) {
@@ -23,22 +22,22 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion }:
   }, {} as Record<string, Sale[]>)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {Object.entries(groupedSales).map(([date, dateSales]) => (
         <Card key={date} className="w-full bg-card text-card-foreground">
-          <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">{date}</h2>
+          <CardContent className="p-4 md:p-6">
+            <h2 className="text-lg md:text-xl font-semibold mb-4 text-foreground">{date}</h2>
             <div className="space-y-4">
               {dateSales.map((sale) => (
                 <Card key={sale.id} className="w-full bg-background">
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 md:p-4">
                     <div className="flex justify-between items-center mb-2">
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground">Venta #{sale.id}</h3>
-                        <p className="text-sm text-muted-foreground">{new Date(sale.created_at).toLocaleString()}</p>
+                        <h3 className="text-base md:text-lg font-semibold text-foreground">Venta #{sale.id}</h3>
+                        <p className="text-xs md:text-sm text-muted-foreground">{new Date(sale.created_at).toLocaleString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-foreground">{formatPrice(sale.total)}</p>
+                        <p className="text-base md:text-lg font-bold text-foreground">{formatPrice(sale.total)}</p>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -55,26 +54,28 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion }:
                       </div>
                     </div>
                     {expandedSales.includes(sale.id) && (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-foreground">Producto</TableHead>
-                            <TableHead className="text-foreground">Cantidad</TableHead>
-                            <TableHead className="text-foreground">Precio Unitario</TableHead>
-                            <TableHead className="text-foreground">Subtotal</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {sale.items?.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="text-foreground">{item.product?.name}</TableCell>
-                              <TableCell className="text-foreground">{item.quantity}</TableCell>
-                              <TableCell className="text-foreground">{formatPrice(item.unit_price)}</TableCell>
-                              <TableCell className="text-foreground">{formatPrice(item.subtotal)}</TableCell>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-foreground text-xs md:text-sm">Producto</TableHead>
+                              <TableHead className="text-foreground text-xs md:text-sm">Cantidad</TableHead>
+                              <TableHead className="text-foreground text-xs md:text-sm">Precio Unitario</TableHead>
+                              <TableHead className="text-foreground text-xs md:text-sm">Subtotal</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {sale.items?.map((item, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="text-foreground text-xs md:text-sm">{item.product?.name}</TableCell>
+                                <TableCell className="text-foreground text-xs md:text-sm">{item.quantity}</TableCell>
+                                <TableCell className="text-foreground text-xs md:text-sm">{formatPrice(item.unit_price)}</TableCell>
+                                <TableCell className="text-foreground text-xs md:text-sm">{formatPrice(item.subtotal)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
