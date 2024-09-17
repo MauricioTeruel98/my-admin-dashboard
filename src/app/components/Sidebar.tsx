@@ -12,10 +12,10 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, handleTabChange, isDrawerOpen, setIsDrawerOpen }: SidebarProps) {
   const SidebarContent = ({ animate = false }) => (
-    <div className={`flex flex-col h-full ${animate ? 'md:animate-none' : ''}`}>
+    <div className={`flex flex-col h-full bg-background ${animate ? 'md:animate-none' : ''}`}>
       {animate && (
-        <div className="flex justify-between items-center p-4 border-b md:hidden">
-          <h2 className="text-lg font-semibold">Menú</h2>
+        <div className="flex justify-between items-center p-4 border-b border-border md:hidden">
+          <h2 className="text-lg font-semibold text-foreground">Menú</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -51,7 +51,7 @@ export default function Sidebar({ activeTab, handleTabChange, isDrawerOpen, setI
           Análisis
         </Button>
       </nav>
-      <div className="p-4 border-t">
+      <div className="p-4 border-t border-border">
         <LogoutButton />
       </div>
     </div>
@@ -59,19 +59,19 @@ export default function Sidebar({ activeTab, handleTabChange, isDrawerOpen, setI
 
   return (
     <>
-      <aside className="w-64 bg-white shadow-md hidden md:block">
+      <aside className="w-64 bg-background shadow-md hidden md:block">
         <SidebarContent animate={false} />
       </aside>
       {isDrawerOpen && (
         <motion.div
-          className="fixed inset-0 z-50 bg-black bg-opacity-50 md:hidden"
+          className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setIsDrawerOpen(false)}
         >
           <motion.div
-            className="fixed inset-y-0 left-0 w-64 bg-white shadow-md"
+            className="fixed inset-y-0 left-0 w-64 bg-background shadow-md"
             initial={{ x: -300 }}
             animate={{ x: 0 }}
             exit={{ x: -300 }}

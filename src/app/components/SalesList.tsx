@@ -25,25 +25,25 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion }:
   return (
     <div className="space-y-8">
       {Object.entries(groupedSales).map(([date, dateSales]) => (
-        <Card key={date} className="w-full">
+        <Card key={date} className="w-full bg-card text-card-foreground">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-4">{date}</h2>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">{date}</h2>
             <div className="space-y-4">
               {dateSales.map((sale) => (
-                <Card key={sale.id} className="w-full">
+                <Card key={sale.id} className="w-full bg-background">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-center mb-2">
                       <div>
-                        <h3 className="text-lg font-semibold">Venta #{sale.id}</h3>
-                        <p className="text-sm text-gray-500">{new Date(sale.created_at).toLocaleString()}</p>
+                        <h3 className="text-lg font-semibold text-foreground">Venta #{sale.id}</h3>
+                        <p className="text-sm text-muted-foreground">{new Date(sale.created_at).toLocaleString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold">{formatPrice(sale.total)}</p>
+                        <p className="text-lg font-bold text-foreground">{formatPrice(sale.total)}</p>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleSaleExpansion(sale.id)}
-                          className="p-0 h-auto"
+                          className="p-0 h-auto text-primary"
                         >
                           {expandedSales.includes(sale.id) ? (
                             <ChevronUp className="h-4 w-4" />
@@ -58,19 +58,19 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion }:
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Producto</TableHead>
-                            <TableHead>Cantidad</TableHead>
-                            <TableHead>Precio Unitario</TableHead>
-                            <TableHead>Subtotal</TableHead>
+                            <TableHead className="text-foreground">Producto</TableHead>
+                            <TableHead className="text-foreground">Cantidad</TableHead>
+                            <TableHead className="text-foreground">Precio Unitario</TableHead>
+                            <TableHead className="text-foreground">Subtotal</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {sale.items?.map((item, index) => (
                             <TableRow key={index}>
-                              <TableCell>{item.product.name}</TableCell>
-                              <TableCell>{item.quantity}</TableCell>
-                              <TableCell>{formatPrice(item.product.price)}</TableCell>
-                              <TableCell>{formatPrice(item.subtotal)}</TableCell>
+                              <TableCell className="text-foreground">{item.product?.name}</TableCell>
+                              <TableCell className="text-foreground">{item.quantity}</TableCell>
+                              <TableCell className="text-foreground">{formatPrice(item.unit_price)}</TableCell>
+                              <TableCell className="text-foreground">{formatPrice(item.subtotal)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

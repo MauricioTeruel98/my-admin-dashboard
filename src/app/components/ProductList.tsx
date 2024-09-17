@@ -29,9 +29,11 @@ export default function ProductList({
   const itemsPerPage = 5
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    product.is_active && (
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   )
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -59,13 +61,13 @@ export default function ProductList({
     <div>
       <div className="mb-4 flex justify-between items-center">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
+            className="pl-8 bg-input text-foreground border-primary"
           />
         </div>
       </div>
@@ -73,34 +75,34 @@ export default function ProductList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead onClick={() => handleSort('name')} className="cursor-pointer">
+              <TableHead onClick={() => handleSort('name')} className="cursor-pointer text-foreground">
                 Nombre {sortColumn === 'name' && <ArrowUpDown className="inline ml-1" />}
               </TableHead>
-              <TableHead onClick={() => handleSort('code')} className="cursor-pointer">
+              <TableHead onClick={() => handleSort('code')} className="cursor-pointer text-foreground">
                 Código {sortColumn === 'code' && <ArrowUpDown className="inline ml-1" />}
               </TableHead>
-              <TableHead onClick={() => handleSort('price')} className="cursor-pointer">
+              <TableHead onClick={() => handleSort('price')} className="cursor-pointer text-foreground">
                 Precio {sortColumn === 'price' && <ArrowUpDown className="inline ml-1" />}
               </TableHead>
-              <TableHead onClick={() => handleSort('stock')} className="cursor-pointer">
+              <TableHead onClick={() => handleSort('stock')} className="cursor-pointer text-foreground">
                 Stock {sortColumn === 'stock' && <ArrowUpDown className="inline ml-1" />}
               </TableHead>
-              <TableHead>Unidad</TableHead>
-              <TableHead onClick={() => handleSort('category')} className="cursor-pointer">
+              <TableHead className="text-foreground">Unidad</TableHead>
+              <TableHead onClick={() => handleSort('category')} className="cursor-pointer text-foreground">
                 Categoría {sortColumn === 'category' && <ArrowUpDown className="inline ml-1" />}
               </TableHead>
-              <TableHead>Acciones</TableHead>
+              <TableHead className="text-foreground">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentProducts.map((product) => (
               <TableRow key={product.id}>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>{product.code}</TableCell>
-                <TableCell>{formatPrice(product.price)}</TableCell>
-                <TableCell>{product.stock}</TableCell>
-                <TableCell>{product.unit}</TableCell>
-                <TableCell>{product.category}</TableCell>
+                <TableCell className="text-foreground">{product.name}</TableCell>
+                <TableCell className="text-foreground">{product.code}</TableCell>
+                <TableCell className="text-foreground">{formatPrice(product.price)}</TableCell>
+                <TableCell className="text-foreground">{product.stock}</TableCell>
+                <TableCell className="text-foreground">{product.unit}</TableCell>
+                <TableCell className="text-foreground">{product.category}</TableCell>
                 <TableCell>
                   <Button
                     variant="ghost"
@@ -109,6 +111,7 @@ export default function ProductList({
                       setEditingProduct(product)
                       setIsEditModalOpen(true)
                     }}
+                    className="text-primary"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -119,6 +122,7 @@ export default function ProductList({
                       setProductToDelete(product)
                       setIsDeleteModalOpen(true)
                     }}
+                    className="text-primary"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

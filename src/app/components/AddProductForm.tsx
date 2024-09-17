@@ -18,7 +18,8 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
     unit: 'unidad',
     category: '',
     stock: 0,
-    user_id: ''
+    user_id: '',
+    is_active: true
   })
 
   const handleProductSubmit = async (e: React.FormEvent) => {
@@ -34,7 +35,7 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
       toast.error('No se pudo añadir el producto')
     } else {
       refreshData()
-      setNewProduct({ name: '', code: '', price: 0, unit: 'unidad', category: '', stock: 0, user_id: '' })
+      setNewProduct({ name: '', code: '', price: 0, unit: 'unidad', category: '', stock: 0, user_id: '', is_active: true })
       toast.success('Producto añadido exitosamente')
     }
   }
@@ -43,25 +44,27 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
     <form onSubmit={handleProductSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="name">Nombre</Label>
+          <Label htmlFor="name" className="text-foreground">Nombre</Label>
           <Input
             id="name"
             value={newProduct.name}
             onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
             required
+            className="border-primary"
           />
         </div>
         <div>
-          <Label htmlFor="code">Código</Label>
+          <Label htmlFor="code" className="text-foreground">Código</Label>
           <Input
             id="code"
             value={newProduct.code}
             onChange={(e) => setNewProduct({ ...newProduct, code: e.target.value })}
             required
+            className="border-primary"
           />
         </div>
         <div>
-          <Label htmlFor="price">Precio</Label>
+          <Label htmlFor="price" className="text-foreground">Precio</Label>
           <Input
             id="price"
             type="number"
@@ -69,10 +72,11 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
             value={newProduct.price}
             onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) })}
             required
+            className="border-primary"
           />
         </div>
         <div>
-          <Label htmlFor="stock">Stock</Label>
+          <Label htmlFor="stock" className="text-foreground">Stock</Label>
           <Input
             id="stock"
             type="number"
@@ -80,15 +84,16 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
             value={newProduct.stock}
             onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) })}
             required
+            className="border-primary"
           />
         </div>
         <div>
-          <Label htmlFor="unit">Unidad</Label>
+          <Label htmlFor="unit" className="text-foreground">Unidad</Label>
           <Select
             value={newProduct.unit}
             onValueChange={(value) => setNewProduct({ ...newProduct, unit: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="border-primary">
               <SelectValue placeholder="Seleccionar unidad" />
             </SelectTrigger>
             <SelectContent>
@@ -98,16 +103,17 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
           </Select>
         </div>
         <div>
-          <Label htmlFor="category">Categoría</Label>
+          <Label htmlFor="category" className="text-foreground">Categoría</Label>
           <Input
             id="category"
             value={newProduct.category}
             onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
             required
+            className="border-primary"
           />
         </div>
       </div>
-      <Button type="submit">Añadir Producto</Button>
+      <Button type="submit" className="bg-primary text-primary-foreground">Añadir Producto</Button>
     </form>
   )
 }

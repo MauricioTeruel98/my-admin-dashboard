@@ -20,12 +20,12 @@ export default function ProductManagement({ products, refreshData }: ProductMana
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Gestión de Productos</h2>
+      <h2 className="text-2xl font-bold mb-4 text-foreground">Gestión de Productos</h2>
       <Accordion type="single" collapsible className="mb-4">
         <AccordionItem value="add-product">
-          <AccordionTrigger>
+          <AccordionTrigger className="text-foreground">
             <div className="flex items-center">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-2 text-primary" />
               Añadir Nuevo Producto
             </div>
           </AccordionTrigger>

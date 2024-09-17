@@ -29,31 +29,31 @@ export default function DeleteProductModal({
 
     const { error } = await supabase
       .from('products')
-      .delete()
+      .update({ is_active: false })
       .eq('id', productToDelete.id)
 
     if (error) {
-      console.error('Error al eliminar producto:', error)
-      toast.error('No se pudo eliminar el producto')
+      console.error('Error al desactivar producto:', error)
+      toast.error('No se pudo desactivar el producto')
     } else {
       refreshData()
       setIsDeleteModalOpen(false)
-      toast.success('Producto eliminado exitosamente')
+      toast.success('Producto desactivado exitosamente')
     }
   }
 
   return (
     <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-      <DialogContent>
+      <DialogContent className="bg-background text-foreground">
         <DialogHeader>
-          <DialogTitle>Eliminar Producto</DialogTitle>
-          <DialogDescription>
-            ¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.
+          <DialogTitle className="text-foreground">Desactivar Producto</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            ¿Estás seguro de que quieres desactivar este producto? Esta acción no afectará las ventas realizadas.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</Button>
-          <Button variant="destructive" onClick={handleProductDelete}>Eliminar</Button>
+          <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} className="border-primary text-primary">Cancelar</Button>
+          <Button variant="destructive" onClick={handleProductDelete} className="bg-destructive text-destructive-foreground">Desactivar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

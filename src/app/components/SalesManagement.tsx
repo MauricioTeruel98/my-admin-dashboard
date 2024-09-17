@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/supabase/supabase'
 import { Product, Sale } from '../types'
 import SalesList from './SalesList'
 import AddSaleForm from './AddSaleForm'
@@ -6,12 +7,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Plus } from 'lucide-react'
 
 interface SalesManagementProps {
-  sales: Sale[]
   products: Product[]
   refreshData: () => Promise<void>
 }
 
-export default function SalesManagement({ sales, products, refreshData }: SalesManagementProps) {
+export default function SalesManagement({ products, refreshData }: SalesManagementProps) {
+  const [sales, setSales] = useState<Sale[]>([])
   const [expandedSales, setExpandedSales] = useState<number[]>([])
 
   const toggleSaleExpansion = (saleId: number) => {
@@ -20,6 +21,39 @@ export default function SalesManagement({ sales, products, refreshData }: SalesM
         ? prev.filter(id => id !== saleId)
         : [...prev, saleId]
     )
+  }
+
+  const fetchSales = async () => {
+    const { data: salesData, error: salesError } = await supabase
+      .from('sales')
+      .select(`
+        id,
+        total,
+        created_at,
+        items:product_sale(
+          product_id,
+          quantity,
+          unit_price,
+          subtotal,
+          product:products(name)
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (salesError) {
+      console.error('Error fetching sales:', salesError)
+    } else if (salesData) {
+      setSales(salesData as unknown as Sale[])
+    }
+  }
+
+  useEffect(() => {
+    fetchSales()
+  }, [])
+
+  const refreshSalesData = async () => {
+    await fetchSales()
+    await refreshData()
   }
 
   return (
@@ -34,7 +68,7 @@ export default function SalesManagement({ sales, products, refreshData }: SalesM
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <AddSaleForm products={products} refreshData={refreshData} />
+            <AddSaleForm products={products} refreshData={refreshSalesData} />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

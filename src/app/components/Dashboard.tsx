@@ -38,7 +38,7 @@ export default function Dashboard() {
   }, [refreshData])
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-background text-foreground">
       <Toaster position="top-right" />
       <Header 
         isDrawerOpen={isDrawerOpen} 
@@ -57,7 +57,7 @@ export default function Dashboard() {
         </div>
         <main className="flex-1 p-4 overflow-auto">
           {activeTab === 'products' && <ProductManagement products={products} refreshData={refreshData} />}
-          {activeTab === 'sales' && <SalesManagement sales={sales} products={products} refreshData={refreshData} />}
+          {activeTab === 'sales' && <SalesManagement products={products} refreshData={refreshData} />}
           {activeTab === 'analytics' && <Analytics salesData={salesData} products={products} />}
         </main>
       </div>

@@ -6,10 +6,8 @@ import { toast } from 'react-hot-toast'
 import { Product, SaleItem } from '../types'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Trash2, Plus, Search } from 'lucide-react'
-import { PostgrestSingleResponse } from '@supabase/supabase-js'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Search, Trash2 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 
 interface AddSaleFormProps {
@@ -32,7 +30,15 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
     if (existingItem) {
       updateSaleItem(existingItem.product_id, 'quantity', existingItem.quantity + 1)
     } else {
-      setSaleItems([...saleItems, { product_id: product.id, quantity: 1 }])
+      setSaleItems([...saleItems, { 
+        product_id: product.id, 
+        quantity: 1, 
+        unit_price: product.price,
+        subtotal: product.price,
+        product: {
+          name: product.name
+        }
+      }])
     }
   }
 
@@ -41,17 +47,19 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
   }
 
   const updateSaleItem = (productId: number, field: keyof SaleItem, value: number) => {
-    setSaleItems(saleItems.map(item => 
-      item.product_id === productId ? { ...item, [field]: value } : item
-    ))
+    setSaleItems(saleItems.map(item => {
+      if (item.product_id === productId) {
+        const updatedItem = { ...item, [field]: value }
+        updatedItem.subtotal = updatedItem.quantity * updatedItem.unit_price
+        return updatedItem
+      }
+      return item
+    }))
   }
 
   const totalSale = useMemo(() => {
-    return saleItems.reduce((sum, item) => {
-      const product = products.find(p => p.id === item.product_id)
-      return sum + (product ? product.price * item.quantity : 0)
-    }, 0)
-  }, [saleItems, products])
+    return saleItems.reduce((sum, item) => sum + item.subtotal, 0)
+  }, [saleItems])
 
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,12 +96,12 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
     const saleId = saleData[0].id
 
     const productSalePromises = saleItems.map(item => {
-      const product = products.find(p => p.id === item.product_id)
       return supabase.from('product_sale').insert({
         product_id: item.product_id,
         sale_id: saleId,
         quantity: item.quantity,
-        subtotal: product ? product.price * item.quantity : 0
+        unit_price: item.unit_price,
+        subtotal: item.subtotal
       })
     })
 
@@ -118,37 +126,29 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
       return Promise.resolve()
     })
 
-    const stockUpdateResults = await Promise.all(stockUpdatePromises)
-    const stockUpdateErrors = stockUpdateResults
-      .filter((result): result is PostgrestSingleResponse<null> => result !== undefined && result !== null && 'error' in result)
-      .filter(result => result.error);
+    await Promise.all(stockUpdatePromises)
 
-    if (stockUpdateErrors.length > 0) {
-      console.error('Errores al actualizar el stock:', stockUpdateErrors)
-      toast.error('No se pudo actualizar el stock de algunos productos')
-    } else {
-      refreshData()
-      setSaleItems([])
-      setSearchTerm('')
-      toast.success('Venta registrada y stock actualizado exitosamente')
-    }
+    refreshData()
+    setSaleItems([])
+    setSearchTerm('')
+    toast.success('Venta registrada y stock actualizado exitosamente')
   }
 
   return (
-    <Card>
+    <Card className="bg-card text-card-foreground">
       <CardHeader>
         <CardTitle>Nueva Venta</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <Search className="text-gray-400" />
+            <Search className="text-muted-foreground" />
             <Input
               type="text"
               placeholder="Buscar producto..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
+              className="flex-1 border-primary"
             />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -157,12 +157,12 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
                 key={product.id}
                 onClick={() => addSaleItem(product)}
                 variant="outline"
-                className="h-auto py-2 px-3 flex flex-col items-start text-left"
+                className="h-auto py-2 px-3 flex flex-col items-start text-left border-primary"
                 disabled={product.stock === 0}
               >
                 <span className="font-semibold">{product.name}</span>
-                <span className="text-sm text-gray-500">Stock: {product.stock}</span>
-                <span className="text-sm font-medium">${product.price.toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground">Stock: {product.stock}</span>
+                <span className="text-sm font-medium">{formatPrice(product.price)}</span>
               </Button>
             ))}
           </div>
@@ -171,20 +171,19 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
               <h3 className="font-semibold">Productos seleccionados:</h3>
               {saleItems.map((item) => {
                 const product = products.find(p => p.id === item.product_id)
-                const subtotal = product ? product.price * item.quantity : 0
                 return (
-                  <div key={item.product_id} className="flex items-center justify-between border-b pb-2">
-                    <span>{product?.name}</span>
+                  <div key={item.product_id} className="flex items-center justify-between border-b border-border pb-2">
+                    <span>{item.product?.name}</span>
                     <div className="flex items-center space-x-2">
                       <Input
                         type="number"
                         value={item.quantity}
                         onChange={(e) => updateSaleItem(item.product_id, 'quantity', parseInt(e.target.value))}
-                        className="w-20"
+                        className="w-20 border-primary"
                         min="1"
                         max={product?.stock}
                       />
-                      <span className="w-24 text-right"><b>Subtotal:</b> {formatPrice(subtotal)}</span>
+                      <span className="w-24 text-right"><b>Subtotal:</b> {formatPrice(item.subtotal)}</span>
                       <Button
                         type="button"
                         variant="destructive"
@@ -203,9 +202,9 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
       </CardContent>
       <CardFooter className="flex justify-between">
         <div className="text-lg font-semibold">
-          Total: ${totalSale.toFixed(2)}
+          Total: {formatPrice(totalSale)}
         </div>
-        <Button onClick={handleSaleSubmit} disabled={saleItems.length === 0}>
+        <Button onClick={handleSaleSubmit} disabled={saleItems.length === 0} className="bg-primary text-primary-foreground">
           Registrar Venta
         </Button>
       </CardFooter>

@@ -66,32 +66,34 @@ export default function EditProductModal({
 
   return (
     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-      <DialogContent>
+      <DialogContent className="bg-background text-foreground">
         <DialogHeader>
-          <DialogTitle>Editar Producto</DialogTitle>
+          <DialogTitle className="text-foreground">Editar Producto</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleProductEdit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="edit-name">Nombre</Label>
+              <Label htmlFor="edit-name" className="text-foreground">Nombre</Label>
               <Input
                 id="edit-name"
                 value={product.name}
                 onChange={(e) => setProduct({ ...product, name: e.target.value })}
                 required
+                className="bg-input text-foreground border-primary"
               />
             </div>
             <div>
-              <Label htmlFor="edit-code">Código</Label>
+              <Label htmlFor="edit-code" className="text-foreground">Código</Label>
               <Input
                 id="edit-code"
                 value={product.code}
                 onChange={(e) => setProduct({ ...product, code: e.target.value })}
                 required
+                className="bg-input text-foreground border-primary"
               />
             </div>
             <div>
-              <Label htmlFor="edit-price">Precio</Label>
+              <Label htmlFor="edit-price" className="text-foreground">Precio</Label>
               <Input
                 id="edit-price"
                 type="number"
@@ -99,10 +101,11 @@ export default function EditProductModal({
                 value={product.price}
                 onChange={(e) => setProduct({ ...product, price: parseFloat(e.target.value) })}
                 required
+                className="bg-input text-foreground border-primary"
               />
             </div>
             <div>
-              <Label htmlFor="edit-stock">Stock</Label>
+              <Label htmlFor="edit-stock" className="text-foreground">Stock</Label>
               <Input
                 id="edit-stock"
                 type="number"
@@ -110,15 +113,16 @@ export default function EditProductModal({
                 value={product.stock}
                 onChange={(e) => setProduct({ ...product, stock: parseInt(e.target.value) })}
                 required
+                className="bg-input text-foreground border-primary"
               />
             </div>
             <div>
-              <Label htmlFor="edit-unit">Unidad</Label>
+              <Label htmlFor="edit-unit" className="text-foreground">Unidad</Label>
               <Select
                 value={product.unit}
                 onValueChange={(value) => setProduct({ ...product, unit: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-input text-foreground border-primary">
                   <SelectValue placeholder="Seleccionar unidad" />
                 </SelectTrigger>
                 <SelectContent>
@@ -128,17 +132,18 @@ export default function EditProductModal({
               </Select>
             </div>
             <div>
-              <Label htmlFor="edit-category">Categoría</Label>
+              <Label htmlFor="edit-category" className="text-foreground">Categoría</Label>
               <Input
                 id="edit-category"
                 value={product.category}
                 onChange={(e) => setProduct({ ...product, category: e.target.value })}
                 required
+                className="bg-input text-foreground border-primary"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Guardar Cambios</Button>
+            <Button type="submit" className="bg-primary text-primary-foreground">Guardar Cambios</Button>
           </DialogFooter>
         </form>
       </DialogContent>

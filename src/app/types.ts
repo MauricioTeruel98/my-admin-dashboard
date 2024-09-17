@@ -7,22 +7,24 @@ export interface Product {
   category: string;
   stock: number;
   user_id: string;
+  is_active: boolean;
 }
 
 export interface SaleItem {
   product_id: number;
   quantity: number;
+  unit_price: number;
+  subtotal: number;
+  product?: {
+    name: string;
+  };
 }
 
 export interface Sale {
   id: number;
   total: number;
   created_at: string;
-  items?: {
-    product: Product;
-    quantity: number;
-    subtotal: number;
-  }[];
+  items: SaleItem[];
 }
 
 export interface SalesData {
