@@ -93,93 +93,21 @@ export async function fetchSalesData(
   return Object.entries(groupedData).map(([date, total]) => ({ date, total }));
 }
 
-export async function addProduct(
+export async function updateProductStock(
   supabase: SupabaseClient,
-  product: Omit<Product, "id">
-): Promise<Product | null> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
+  productId: number,
+  stockChange: number
+): Promise<void> {
   const { data, error } = await supabase
     .from("products")
-    .insert([{ ...product, user_id: user?.id }]) // Use user?.id safely
-    .single();
+    .update({ stock: supabase.rpc("increment_stock", { x: stockChange }) })
+    .eq("id", productId)
+    .select();
 
   if (error) {
-    console.error("Error al añadir producto:", error);
-    toast.error("No se pudo añadir el producto");
-    return null;
+    console.error("Error al actualizar stock:", error);
+    toast.error("No se pudo actualizar el stock");
+  } else if (data) {
+    toast.success("Stock actualizado exitosamente");
   }
-  return data;
 }
-
-export async function updateProduct(
-  supabase: SupabaseClient,
-  product: Product
-): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from("products")
-    .update(product)
-    .eq("id", product.id)
-    .single();
-
-  if (error) {
-    console.error("Error al actualizar producto:", error);
-    toast.error("No se pudo actualizar el producto");
-    return null;
-  }
-  return data;
-}
-
-export async function deleteProduct(
-  supabase: SupabaseClient,
-  productId: number
-): Promise<boolean> {
-  const { error } = await supabase
-    .from("products")
-    .delete()
-    .eq("id", productId);
-
-  if (error) {
-    console.error("Error al eliminar producto:", error);
-    toast.error("No se pudo eliminar el producto");
-    return false;
-  }
-  return true;
-}
-
-/*export async function addSale(
-  supabase: SupabaseClient,
-  sale: Omit<Sale, "id">,
-  items: { product_id: number; quantity: number }[]
-): Promise<Sale | null> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  const { data: saleData, error: saleError } = await supabase
-    .from("sales")
-    .insert([{ ...sale, user_id: user?.id }])
-    .single();
-
-  if (saleError) {
-    console.error("Error al añadir venta:", saleError);
-    toast.error("No se pudo añadir la venta");
-    return null;
-  }
-
-  const { error: itemsError } = await supabase
-    .from("product_sale")
-    .insert(items.map((item) => ({ ...item, sale_id: saleData?.id })));
-
-  if (itemsError) {
-    console.error("Error al añadir items de venta:", itemsError);
-    toast.error("No se pudieron añadir los items de la venta");
-    return null;
-  }
-
-  return saleData;
-}*/

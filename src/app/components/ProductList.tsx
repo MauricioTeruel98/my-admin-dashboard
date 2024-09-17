@@ -26,7 +26,7 @@ export default function ProductList({
   const [sortColumn, setSortColumn] = useState<keyof Product>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 25
 
   const filteredProducts = products.filter(product =>
     product.is_active && (

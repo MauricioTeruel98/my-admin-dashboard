@@ -10,6 +10,7 @@ import SalesManagement from './SalesManagement'
 import Analytics from './Analytics'
 import { Product, Sale, SalesData } from '../types'
 import { fetchProducts, fetchSales, fetchSalesData } from './utils/dataFetchers'
+import StockControl from './StockControl'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('products')
@@ -40,24 +41,25 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <Toaster position="top-right" />
-      <Header 
-        isDrawerOpen={isDrawerOpen} 
+      <Header
+        isDrawerOpen={isDrawerOpen}
         setIsDrawerOpen={setIsDrawerOpen}
         activeTab={activeTab}
         handleTabChange={handleTabChange}
       />
       <div className="flex flex-1 overflow-hidden">
         <div className='hidden md:flex'>
-        <Sidebar 
-          activeTab={activeTab} 
-          handleTabChange={handleTabChange} 
-          isDrawerOpen={isDrawerOpen} 
-          setIsDrawerOpen={setIsDrawerOpen} 
-        />
+          <Sidebar
+            activeTab={activeTab}
+            handleTabChange={handleTabChange}
+            isDrawerOpen={isDrawerOpen}
+            setIsDrawerOpen={setIsDrawerOpen}
+          />
         </div>
         <main className="flex-1 p-4 overflow-auto">
           {activeTab === 'products' && <ProductManagement products={products} refreshData={refreshData} />}
           {activeTab === 'sales' && <SalesManagement products={products} refreshData={refreshData} />}
+          {activeTab === 'stock' && <StockControl />}
           {activeTab === 'analytics' && <Analytics salesData={salesData} products={products} />}
         </main>
       </div>

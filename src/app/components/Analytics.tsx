@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -10,10 +12,13 @@ import {
   BarElement,
   Title, 
   Tooltip, 
-  Legend 
+  Legend,
+  ArcElement
 } from 'chart.js'
-import { Line, Bar } from 'react-chartjs-2'
+import { Line, Bar, Doughnut } from 'react-chartjs-2'
 import { Product, SalesData } from '../types'
+import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
+import { formatPrice } from '@/lib/utils'
 
 ChartJS.register(
   CategoryScale, 
@@ -21,6 +26,7 @@ ChartJS.register(
   PointElement, 
   LineElement, 
   BarElement,
+  ArcElement,
   Title, 
   Tooltip, 
   Legend
@@ -32,12 +38,16 @@ interface AnalyticsProps {
 }
 
 export default function Analytics({ salesData, products }: AnalyticsProps) {
+  const [timeRange, setTimeRange] = useState('7')
+
+  const filteredSalesData = salesData.slice(-parseInt(timeRange))
+
   const salesChartData = {
-    labels: salesData.map(d => d.date),
+    labels: filteredSalesData.map(d => d.date),
     datasets: [
       {
         label: 'Ventas por día',
-        data: salesData.map(d => d.total),
+        data: filteredSalesData.map(d => d.total),
         fill: false,
         borderColor: 'rgb(255, 191, 0)',
         tension: 0.1
@@ -52,6 +62,26 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
         label: 'Stock de productos',
         data: products.map(p => p.stock),
         backgroundColor: 'rgba(255, 191, 0, 0.5)',
+      }
+    ]
+  }
+
+  const topSellingProducts = products
+    .sort((a, b) => b.stock - a.stock)
+    .slice(0, 5)
+
+  const topSellingChartData = {
+    labels: topSellingProducts.map(p => p.name),
+    datasets: [
+      {
+        data: topSellingProducts.map(p => p.stock),
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.8)',
+          'rgba(54, 162, 235, 0.8)',
+          'rgba(255, 206, 86, 0.8)',
+          'rgba(75, 192, 192, 0.8)',
+          'rgba(153, 102, 255, 0.8)',
+        ],
       }
     ]
   }
@@ -92,10 +122,38 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
     }
   }
 
+  const totalSales = filteredSalesData.reduce((sum, day) => sum + day.total, 0)
+  const averageSales = totalSales / filteredSalesData.length
+  const lastDaySales = filteredSalesData[filteredSalesData.length - 1]?.total || 0
+  const salesTrend = lastDaySales > averageSales
+
   return (
-    <div>
+    <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-4 text-foreground">Análisis</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <div className="flex justify-between items-center">
+        <Select value={timeRange} onValueChange={setTimeRange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Seleccionar rango" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="7">Últimos 7 días</SelectItem>
+            <SelectItem value="30">Últimos 30 días</SelectItem>
+            <SelectItem value="90">Últimos 90 días</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">Ventas totales</p>
+          <p className="text-2xl font-bold">{formatPrice(totalSales)}</p>
+          <div className={`flex items-center ${salesTrend ? 'text-green-500' : 'text-red-500'}`}>
+            {salesTrend ? <ArrowUpIcon className="w-4 h-4 mr-1" /> : <ArrowDownIcon className="w-4 h-4 mr-1" />}
+            <span className="text-sm">{salesTrend ? 'Tendencia al alza' : 'Tendencia a la baja'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-card text-card-foreground">
           <CardContent>
             <h3 className="text-lg font-semibold mb-2 text-foreground">Ventas por Día</h3>
@@ -104,11 +162,33 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
             </div>
           </CardContent>
         </Card>
+        
         <Card className="bg-card text-card-foreground">
           <CardContent>
             <h3 className="text-lg font-semibold mb-2 text-foreground">Stock de Productos</h3>
             <div style={{ height: '300px' }}>
               <Bar data={productStockChartData} options={options} />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card text-card-foreground md:col-span-2 mb-20">
+          <CardContent>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Top 5 Productos más Vendidos</h3>
+            <div style={{ height: '300px' }}>
+              <Doughnut 
+                data={topSellingChartData} 
+                options={{
+                  ...options,
+                  plugins: {
+                    ...options.plugins,
+                    legend: {
+                      ...options.plugins.legend,
+                      position: 'right' as const,
+                    }
+                  }
+                }} 
+              />
             </div>
           </CardContent>
         </Card>
