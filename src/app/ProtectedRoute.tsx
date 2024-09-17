@@ -3,6 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Preloader } from './components/Preloader';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -15,7 +16,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [user, loading, router]);
 
   if (loading) {
-    return <p>Cargando...</p>; // O puedes mostrar un spinner o alguna animación de carga
+    return <Preloader />; // O puedes mostrar un spinner o alguna animación de carga
   }
 
   return user ? <>{children}</> : null; // Si el usuario está autenticado, renderiza el contenido
