@@ -11,6 +11,7 @@ import Analytics from './Analytics'
 import { Product, Sale, SalesData } from '../types'
 import { fetchProducts, fetchSales, fetchSalesData } from './utils/dataFetchers'
 import StockControl from './StockControl'
+import Footer from './Footer'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('products')
@@ -58,11 +59,12 @@ export default function Dashboard() {
         </div>
         <main className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
-            <div className="p-4">
+            <div className="p-4 pb-20 lg:pb-4">
               {activeTab === 'products' && <ProductManagement products={products} refreshData={refreshData} />}
               {activeTab === 'sales' && <SalesManagement products={products} refreshData={refreshData} />}
               {activeTab === 'stock' && <StockControl />}
               {activeTab === 'analytics' && <Analytics salesData={salesData} products={products} />}
+              <Footer />
             </div>
           </div>
         </main>
