@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { toast } from 'react-hot-toast'
 import Image from 'next/image'
 import CreativeLoader from '@/components/ui/CreativeLoader'
+import Link from 'next/link'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -89,6 +90,17 @@ export default function Login() {
               </Button>
             </form>
           </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+            <div className="text-sm">
+              ¿No tienes una cuenta?{' '}
+              <Link href="/register" className="text-primary hover:underline">
+                Regístrate
+              </Link>
+            </div>
+          </CardFooter>
         </Card>
       </div>
     </div>

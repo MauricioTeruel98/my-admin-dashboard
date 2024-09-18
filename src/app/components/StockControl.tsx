@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowUpDown, AlertTriangle, Save, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowUpDown, AlertTriangle, Save, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Preloader } from './Preloader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,6 +24,7 @@ export default function StockControl() {
   const [stockChanges, setStockChanges] = useState<{ [key: number]: number }>({})
   const [currentPage, setCurrentPage] = useState(1)
   const [activeTab, setActiveTab] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     fetchProducts()
@@ -90,16 +91,10 @@ export default function StockControl() {
   }
 
   const filteredProducts = products.filter(product =>
-    filterType === 'all' || (filterType === 'lowStock' && product.stock <= lowStockThreshold)
+    (filterType === 'all' || (filterType === 'lowStock' && product.stock <= lowStockThreshold)) &&
+    (product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.code.toLowerCase().includes(searchTerm.toLowerCase()))
   )
-
-  useEffect(() => {
-    if (filteredProducts.length >
-
-      0) {
-      setIsLoading(false)
-    }
-  }, [filteredProducts])
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1
@@ -127,6 +122,18 @@ export default function StockControl() {
       ) : (
         <>
           <h2 className="text-xl font-bold">Control de Stock</h2>
+          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar productos por nombre o código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 bg-input text-foreground border-primary w-full"
+              />
+            </div>
+          </div>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <div className="flex items-center space-x-2">
               <Label htmlFor="lowStockThreshold" className="text-foreground whitespace-nowrap">Umbral de stock bajo:</Label>

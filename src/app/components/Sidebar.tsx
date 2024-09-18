@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Package, ShoppingCart, BarChart, Boxes, X, UserCircle } from 'lucide-react'
+import { Package, ShoppingCart, BarChart, Boxes, X, UserCircle, DollarSign } from 'lucide-react'
 import LogoutButton from "./LogoutButton"
 import { motion } from "framer-motion"
 
@@ -50,6 +50,14 @@ export default function Sidebar({ activeTab, handleTabChange, isDrawerOpen, setI
         >
           <Boxes className="mr-2 h-4 w-4" />
           Control de Stock
+        </Button>
+        <Button
+          variant={activeTab === 'prices' ? "default" : "ghost"}
+          className={`w-full justify-start ${activeTab === 'prices' ? 'bg-amber-900 text-amber-100' : 'text-amber-100 hover:text-amber-200 hover:bg-amber-900'}`}
+          onClick={() => handleTabChange('prices')}
+        >
+          <DollarSign className="mr-2 h-4 w-4" />
+          Modificar Precios
         </Button>
         <Button
           variant={activeTab === 'analytics' ? "default" : "ghost"}
