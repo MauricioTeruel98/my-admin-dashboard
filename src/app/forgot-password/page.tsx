@@ -50,10 +50,10 @@ export default function ForgotPassword() {
             <div className="z-20 w-full max-w-md px-4">
                 <div className="mb-8 text-center">
                     <Image
-                        src="/images/logo_kiosknet.png"
+                        src="/images/tano.png"
                         alt="Logo"
-                        width={100}
-                        height={100}
+                        width={200}
+                        height={200}
                         className="mx-auto"
                     />
                 </div>
