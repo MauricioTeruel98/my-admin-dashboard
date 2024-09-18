@@ -41,6 +41,7 @@ export default function ProductManagement({ products, refreshData }: ProductMana
           setIsEditModalOpen={setIsEditModalOpen}
           setProductToDelete={setProductToDelete}
           setIsDeleteModalOpen={setIsDeleteModalOpen}
+          refreshData={refreshData}  // Añade esta línea
         />
       </div>
       <EditProductModal
