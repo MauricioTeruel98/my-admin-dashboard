@@ -24,6 +24,7 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion }:
   }, {} as Record<string, Sale[]>)
 
   const [isLoading, setIsLoading] = useState(true)
+  
   useEffect(() => {
     if (Object.keys(groupedSales).length === 0) {
       setIsLoading(false)

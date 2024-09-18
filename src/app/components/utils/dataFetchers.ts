@@ -1,13 +1,75 @@
+import useSWR from "swr";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Product, Sale, SalesData } from "../../types";
 import { toast } from "react-hot-toast";
+
+// Función fetcher genérica
+const fetcher = (supabase: SupabaseClient) => async (key: string) => {
+  switch (key) {
+    case 'products':
+      return fetchProducts(supabase);
+    case 'sales':
+      return fetchSales(supabase);
+    case 'salesData':
+      return fetchSalesData(supabase);
+    default:
+      throw new Error('Unknown key');
+  }
+};
+
+// Hook para productos
+export function useProducts(supabase: SupabaseClient) {
+  const { data, error, mutate } = useSWR('products', fetcher(supabase), {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    refreshInterval: 0,
+  });
+
+  return {
+    products: data,
+    isLoading: !error && !data,
+    isError: error,
+    mutate,
+  };
+}
+
+// Hook para ventas
+export function useSales(supabase: SupabaseClient) {
+  const { data, error, mutate } = useSWR('sales', fetcher(supabase), {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    refreshInterval: 0,
+  });
+
+  return {
+    sales: data,
+    isLoading: !error && !data,
+    isError: error,
+    mutate,
+  };
+}
+
+// Hook para datos de ventas
+export function useSalesData(supabase: SupabaseClient) {
+  const { data, error, mutate } = useSWR('salesData', fetcher(supabase), {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    refreshInterval: 0,
+  });
+
+  return {
+    salesData: data,
+    isLoading: !error && !data,
+    isError: error,
+    mutate,
+  };
+}
 
 export async function fetchProducts(
   supabase: SupabaseClient
 ): Promise<Product[]> {
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
@@ -17,7 +79,6 @@ export async function fetchProducts(
 
   if (error) {
     console.error("Error al obtener productos:", error);
-    toast.error("No se pudieron obtener los productos");
     return [];
   }
   return data || [];
@@ -26,7 +87,6 @@ export async function fetchProducts(
 export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("sales")
@@ -42,11 +102,9 @@ export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
     )
     .eq("user_id", user?.id)
     .order("created_at", { ascending: false });
-  // No need to add a where clause, RLS will handle it
 
   if (error) {
     console.error("Error al obtener ventas:", error);
-    toast.error("No se pudieron obtener las ventas");
     return [];
   }
   return data.map((sale) => ({

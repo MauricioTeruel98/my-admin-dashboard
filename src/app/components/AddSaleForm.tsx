@@ -16,7 +16,7 @@ interface AddSaleFormProps {
 }
 
 export default function AddSaleForm({ products, refreshData }: AddSaleFormProps) {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [visibleProducts, setVisibleProducts] = useState(6)
