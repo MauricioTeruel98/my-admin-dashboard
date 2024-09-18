@@ -7,9 +7,14 @@ import { User } from '../app/types'
 interface AuthContextType {
   user: User | null
   loading: boolean
+  setUser: (user: User | null) => void
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true })
+const AuthContext = createContext<AuthContextType>({ 
+  user: null, 
+  loading: true, 
+  setUser: () => {} 
+})
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
@@ -27,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, setUser }}>
       {children}
     </AuthContext.Provider>
   )

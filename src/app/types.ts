@@ -40,3 +40,10 @@ export interface Subscription {
 }
 
 export type User = SupabaseUser
+
+export interface UserA extends SupabaseUser {
+  user_metadata: {
+    name: string;
+    business_name: string;
+  };
+}
