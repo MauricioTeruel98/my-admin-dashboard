@@ -27,20 +27,23 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
         const searchTermLower = searchTerm.toLowerCase();
         return (
           product.name.toLowerCase().includes(searchTermLower) ||
-          product.code.toLowerCase().includes(searchTermLower) // Filtra también por código
+          product.code.toLowerCase().includes(searchTermLower)
         );
       }
       return false;
     });
   }, [products, searchTerm]);
 
-
   const displayedProducts = filteredProducts.slice(0, visibleProducts)
 
   const addSaleItem = (product: Product) => {
     const existingItem = saleItems.find(item => item.product_id === product.id)
     if (existingItem) {
-      updateSaleItem(existingItem.product_id, 'quantity', existingItem.quantity + 1)
+      if (existingItem.quantity < product.stock) {
+        updateSaleItem(existingItem.product_id, 'quantity', existingItem.quantity + 1)
+      } else {
+        toast.error(`No hay más stock disponible para ${product.name}`)
+      }
     } else {
       setSaleItems([...saleItems, {
         product_id: product.id,
@@ -61,9 +64,13 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
   const updateSaleItem = (productId: number, field: keyof SaleItem, value: number) => {
     setSaleItems(saleItems.map(item => {
       if (item.product_id === productId) {
-        const updatedItem = { ...item, [field]: value }
-        updatedItem.subtotal = updatedItem.quantity * updatedItem.unit_price
-        return updatedItem
+        const product = products.find(p => p.id === productId)
+        if (product) {
+          const newQuantity = field === 'quantity' ? Math.min(Math.max(1, value), product.stock) : value
+          const updatedItem = { ...item, [field]: newQuantity }
+          updatedItem.subtotal = updatedItem.quantity * updatedItem.unit_price
+          return updatedItem
+        }
       }
       return item
     }))
@@ -76,18 +83,6 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true);
-    // Check if there's enough stock for each product
-    for (const item of saleItems) {
-      const product = products.find(p => p.id === item.product_id)
-      if (!product) {
-        toast.error(`Producto no encontrado: ID ${item.product_id}`)
-        return
-      }
-      if (product.stock < item.quantity) {
-        toast.error(`Stock insuficiente para ${product.name}. Disponible: ${product.stock}`)
-        return
-      }
-    }
 
     const {
       data: { user },
@@ -102,6 +97,7 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
     if (saleError) {
       console.error('Error al añadir venta:', saleError)
       toast.error('No se pudo registrar la venta')
+      setIsLoading(false)
       return
     }
 
@@ -123,6 +119,7 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
     if (productSaleErrors.length > 0) {
       console.error('Errores al añadir registros de product_sale:', productSaleErrors)
       toast.error('No se pudieron registrar algunas ventas de productos')
+      setIsLoading(false)
       return
     }
 
@@ -153,16 +150,14 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
 
   return (
     <>
-      {
-        isLoading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="rounded-lg bg-card p-4 shadow-lg">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="sr-only">Cargando venta</span>
-            </div>
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="rounded-lg bg-card p-4 shadow-lg">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="sr-only">Cargando venta</span>
           </div>
-        )
-      }
+        </div>
+      )}
       <Card className="bg-card text-card-foreground">
         <CardHeader>
           <CardTitle>Nueva Venta</CardTitle>

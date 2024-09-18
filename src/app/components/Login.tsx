@@ -11,11 +11,13 @@ import { toast } from 'react-hot-toast'
 import Image from 'next/image'
 import CreativeLoader from '@/components/ui/CreativeLoader'
 import Link from 'next/link'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,13 +30,30 @@ export default function Login() {
     })
 
     if (error) {
-      toast.error(error.message)
+      let errorMessage = 'Ha ocurrido un error durante el inicio de sesión'
+      switch (error.message) {
+        case 'Invalid login credentials':
+          errorMessage = 'Credenciales de inicio de sesión inválidas'
+          break
+        case 'Email not confirmed':
+          errorMessage = 'El email no ha sido confirmado'
+          break
+        case 'User not found':
+          errorMessage = 'Usuario no encontrado'
+          break
+        // Añade más casos según sea necesario
+      }
+      toast.error(errorMessage)
     } else if (data.user) {
       toast.success('Inicio de sesión exitoso')
       router.push('/dashboard')
     }
 
     setLoading(false)
+  }
+
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword)
   }
 
   return (
@@ -77,13 +96,27 @@ export default function Login() {
               </div>
               <div>
                 <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full"
+                    onClick={toggleShowPassword}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <span className="sr-only">
+                      {showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    </span>
+                  </Button>
+                </div>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <CreativeLoader /> : 'Iniciar Sesión'}
