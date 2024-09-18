@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, ShoppingCart, BarChart, DollarSign } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LandingPage() {
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
@@ -12,8 +13,13 @@ export default function LandingPage() {
         <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100 text-amber-950">
             <header className="bg-amber-950 shadow-md p-4 flex justify-between items-center">
                 <div className="flex items-center">
-                    <LayoutDashboard className="h-6 w-6 mr-2 text-amber-500" />
-                    <h1 className="text-xl font-bold text-amber-100">TuNegocioOnline</h1>
+                    <Image
+                        src="/images/tano.png"
+                        alt="Logo"
+                        width={120}
+                        height={120}
+                        className="mx-auto"
+                    />
                 </div>
                 <nav>
                     <Link href="/login">
@@ -62,7 +68,7 @@ export default function LandingPage() {
 
             <footer className="bg-amber-950 text-amber-100 py-8">
                 <div className="container mx-auto px-4 text-center">
-                    <p>&copy; 2023 TuNegocioOnline. Todos los derechos reservados.</p>
+                    <p>&copy; 2024 TuNegocioOnline. Todos los derechos reservados.</p>
                 </div>
             </footer>
 
