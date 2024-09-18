@@ -1,14 +1,23 @@
 import { useEffect, useState } from 'react'
 import { Product } from '../types'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Edit, Trash2, Search, ArrowUpDown } from 'lucide-react'
-import { formatPrice } from '@/lib/utils'
-import Pagination from './Pagination'
-import { Card, CardContent } from "@/components/ui/card"
-import CreativeLoader from '@/components/ui/CreativeLoader'
+import { Search } from 'lucide-react'
 import { Preloader } from './Preloader'
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import ProductGroup from './ProductGroup'
+import { supabase } from '@/supabase/supabase'
+import { toast } from 'react-hot-toast'
+import Pagination from './Pagination'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface ProductListProps {
   products: Product[]
@@ -16,6 +25,7 @@ interface ProductListProps {
   setIsEditModalOpen: (isOpen: boolean) => void
   setProductToDelete: (product: Product) => void
   setIsDeleteModalOpen: (isOpen: boolean) => void
+  refreshData: () => Promise<void>
 }
 
 export default function ProductList({
@@ -23,28 +33,44 @@ export default function ProductList({
   setEditingProduct,
   setIsEditModalOpen,
   setProductToDelete,
-  setIsDeleteModalOpen
+  setIsDeleteModalOpen,
+  refreshData
 }: ProductListProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState<keyof Product>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [currentPage, setCurrentPage] = useState(1)
+  const [activeTab, setActiveTab] = useState('active')
+  const [localProducts, setLocalProducts] = useState<Product[]>(products)
+  const [productToToggle, setProductToToggle] = useState<Product | null>(null)
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const itemsPerPage = 25
 
-  const filteredProducts = products.filter(product =>
-    product.is_active && (
+  useEffect(() => {
+    setLocalProducts(products)
+    setIsLoading(false)
+  }, [products])
+
+  const filteredProducts = localProducts.filter(product => {
+    const matchesSearch = 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  )
+      product.category.toLowerCase().includes(searchTerm.toLowerCase());
 
-  useEffect(() => {
-    if (filteredProducts.length > 0) {
-      setIsLoading(false)
+    switch (activeTab) {
+      case 'active':
+        return product.is_active && matchesSearch;
+      case 'inactive':
+        return !product.is_active && matchesSearch;
+      case 'unidad':
+        return product.is_active && product.unit === 'unidad' && matchesSearch;
+      case 'peso':
+        return product.is_active && product.unit === 'peso' && matchesSearch;
+      default:
+        return matchesSearch;
     }
-  }, [filteredProducts])
+  })
   
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1
@@ -52,9 +78,7 @@ export default function ProductList({
     return 0
   })
 
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentProducts = sortedProducts.slice(indexOfFirstItem, indexOfLastItem)
+  const currentProducts = sortedProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   const handleSort = (column: keyof Product) => {
     if (column === sortColumn) {
@@ -67,135 +91,107 @@ export default function ProductList({
 
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage)
 
+  const toggleProductStatus = async (product: Product) => {
+    if (product.is_active) {
+      setProductToToggle(product)
+      setIsConfirmDialogOpen(true)
+    } else {
+      await updateProductStatus(product)
+    }
+  }
+
+  const updateProductStatus = async (product: Product) => {
+    const { data, error } = await supabase
+      .from('products')
+      .update({ is_active: !product.is_active })
+      .eq('id', product.id)
+      .select()
+
+    if (error) {
+      console.error('Error updating product status:', error)
+      toast.error('No se pudo actualizar el estado del producto')
+    } else if (data) {
+      const updatedProduct = data[0] as Product
+      setLocalProducts(prevProducts => 
+        prevProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
+      )
+      toast.success(`Producto ${updatedProduct.is_active ? 'activado' : 'desactivado'} exitosamente`)
+    }
+  }
+
+  const handleConfirmToggle = async () => {
+    if (productToToggle) {
+      await updateProductStatus(productToToggle)
+      setProductToToggle(null)
+    }
+    setIsConfirmDialogOpen(false)
+  }
+
   return (
     <div>
-      {
-        isLoading ? (
-          <>
-            <Preloader />
-          </>
-        ) : (
-          <>
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Buscar productos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8 bg-input text-foreground border-primary w-full"
-                />
-              </div>
+      {isLoading ? (
+        <Preloader />
+      ) : (
+        <>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar productos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 bg-input text-foreground border-primary w-full"
+              />
             </div>
-            <div className="hidden md:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead onClick={() => handleSort('name')} className="cursor-pointer text-foreground">
-                      Nombre {sortColumn === 'name' && <ArrowUpDown className="inline ml-1" />}
-                    </TableHead>
-                    <TableHead onClick={() => handleSort('code')} className="cursor-pointer text-foreground">
-                      Código {sortColumn === 'code' && <ArrowUpDown className="inline ml-1" />}
-                    </TableHead>
-                    <TableHead onClick={() => handleSort('price')} className="cursor-pointer text-foreground">
-                      Precio {sortColumn === 'price' && <ArrowUpDown className="inline ml-1" />}
-                    </TableHead>
-                    <TableHead onClick={() => handleSort('stock')} className="cursor-pointer text-foreground">
-                      Stock {sortColumn === 'stock' && <ArrowUpDown className="inline ml-1" />}
-                    </TableHead>
-                    <TableHead className="text-foreground">Unidad</TableHead>
-                    <TableHead onClick={() => handleSort('category')} className="cursor-pointer text-foreground">
-                      Categoría {sortColumn === 'category' && <ArrowUpDown className="inline ml-1" />}
-                    </TableHead>
-                    <TableHead className="text-foreground">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="text-foreground">{product.name}</TableCell>
-                      <TableCell className="text-foreground">{product.code}</TableCell>
-                      <TableCell className="text-foreground">{formatPrice(product.price)}</TableCell>
-                      <TableCell className="text-foreground">{product.stock}</TableCell>
-                      <TableCell className="text-foreground">{product.unit}</TableCell>
-                      <TableCell className="text-foreground">{product.category}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditingProduct(product)
-                            setIsEditModalOpen(true)
-                          }}
-                          className="text-primary"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setProductToDelete(product)
-                            setIsDeleteModalOpen(true)
-                          }}
-                          className="text-primary"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="md:hidden space-y-4">
-              {currentProducts.map((product) => (
-                <Card key={product.id}>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground">Código: {product.code}</p>
-                    <p className="text-sm text-muted-foreground">Precio: {formatPrice(product.price)}</p>
-                    <p className="text-sm text-muted-foreground">Stock: {product.stock} {product.unit}</p>
-                    <p className="text-sm text-muted-foreground">Categoría: {product.category}</p>
-                    <div className="mt-2 flex justify-end space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingProduct(product)
-                          setIsEditModalOpen(true)
-                        }}
-                        className="text-primary"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setProductToDelete(product)
-                          setIsDeleteModalOpen(true)
-                        }}
-                        className="text-primary"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Eliminar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </>
-        )
-      }
+          </div>
+          {localProducts.length === 0 ? (
+            <p className="text-center text-muted-foreground">No hay productos disponibles. Añade algunos para empezar.</p>
+          ) : (
+            <>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                <TabsList>
+                  <TabsTrigger value="active">Activos</TabsTrigger>
+                  <TabsTrigger value="inactive">Inactivos</TabsTrigger>
+                  <TabsTrigger value="unidad">Por Unidad</TabsTrigger>
+                  <TabsTrigger value="peso">Por Peso</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <ProductGroup
+                products={currentProducts}
+                handleSort={handleSort}
+                sortColumn={sortColumn}
+                sortDirection={sortDirection}
+                setEditingProduct={setEditingProduct}
+                setIsEditModalOpen={setIsEditModalOpen}
+                setProductToDelete={setProductToDelete}
+                setIsDeleteModalOpen={setIsDeleteModalOpen}
+                toggleProductStatus={toggleProductStatus}
+                showStatus={activeTab === 'inactive'}
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
+        </>
+      )}
+      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de que quieres desactivar este producto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción desactivará el producto. Podrás reactivarlo más tarde si lo necesitas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmToggle}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

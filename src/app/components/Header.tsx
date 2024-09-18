@@ -18,11 +18,6 @@ export default function Header({ isDrawerOpen, setIsDrawerOpen, activeTab, handl
         <LayoutDashboard className="h-6 w-6 mr-2 text-amber-500" />
         <h1 className="text-xl font-bold text-amber-100">Almacén Ema</h1>
       </div>
-      <Link href="/profile" className="absolute top-4 right-4">
-        <Button variant="ghost" size="icon">
-          <UserCircle className="h-6 w-6" />
-        </Button>
-      </Link>
       <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden text-amber-100 hover:text-amber-200">

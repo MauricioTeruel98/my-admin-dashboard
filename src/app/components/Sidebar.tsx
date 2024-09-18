@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Package, ShoppingCart, BarChart, Boxes, X } from 'lucide-react'
+import { Package, ShoppingCart, BarChart, Boxes, X, UserCircle } from 'lucide-react'
 import LogoutButton from "./LogoutButton"
 import { motion } from "framer-motion"
 
@@ -58,6 +58,14 @@ export default function Sidebar({ activeTab, handleTabChange, isDrawerOpen, setI
         >
           <BarChart className="mr-2 h-4 w-4" />
           Análisis
+        </Button>
+        <Button
+          variant={activeTab === 'profile' ? "default" : "ghost"}
+          className={`w-full justify-start ${activeTab === 'profile' ? 'bg-amber-900 text-amber-100' : 'text-amber-100 hover:text-amber-200 hover:bg-amber-900'}`}
+          onClick={() => handleTabChange('profile')}
+        >
+          <UserCircle className="mr-2 h-4 w-4" />
+          Mi Perfil
         </Button>
       </nav>
       <div className="p-4 border-t border-amber-900">

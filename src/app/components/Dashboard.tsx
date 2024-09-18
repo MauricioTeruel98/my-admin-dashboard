@@ -12,6 +12,7 @@ import { Product, Sale, SalesData } from '../types'
 import { fetchProducts, fetchSales, fetchSalesData } from './utils/dataFetchers'
 import StockControl from './StockControl'
 import Footer from './Footer'
+import UserProfile from './UserProfile'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('products')
@@ -64,6 +65,7 @@ export default function Dashboard() {
               {activeTab === 'sales' && <SalesManagement products={products} refreshData={refreshData} />}
               {activeTab === 'stock' && <StockControl />}
               {activeTab === 'analytics' && <Analytics salesData={salesData} products={products} />}
+              {activeTab === 'profile' && <UserProfile />}
               <Footer />
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { supabase } from '@/supabase/supabase'
 import { toast } from 'react-hot-toast'
+import { User } from '../types'
 
 declare global {
     interface Window {
@@ -12,7 +13,7 @@ declare global {
     }
 }
 
-export default function Subscription({ user }) {
+export default function Subscription({ user }: {user: User}) {
     const [loading, setLoading] = useState(false)
     const [mp, setMp] = useState<any>(null)
     const router = useRouter()
