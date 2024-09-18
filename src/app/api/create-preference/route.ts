@@ -21,9 +21,9 @@ export async function POST(request: Request) {
         }
       ],
       back_urls: {
-        success: `${request.headers.get('origin')}/success`,
-        failure: `${request.headers.get('origin')}/failure`,
-        pending: `${request.headers.get('origin')}/pending`,
+        success: `${request.headers.get('origin')}/api/handle-subscription?status=success&user_id=${user_id}`,
+        failure: `${request.headers.get('origin')}/api/handle-subscription?status=failure&user_id=${user_id}`,
+        pending: `${request.headers.get('origin')}/api/handle-subscription?status=pending&user_id=${user_id}`,
       },
       auto_return: 'approved' as const,
       external_reference: user_id,
