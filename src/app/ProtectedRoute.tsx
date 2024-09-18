@@ -22,16 +22,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const checkSubscription = async () => {
     const { data, error } = await supabase
       .from('subscriptions')
-      .select('status, current_period_end')
+      .select('status')
       .eq('user_id', user?.id)
       .single();
 
-    if (error || !data) {
+    if (error || !data || data.status !== 'active') {
       router.push('/profile');
-    } else if (data.status === 'active' && new Date(data.current_period_end) > new Date()) {
-      setHasSubscription(true);
     } else {
-      router.push('/profile');
+      setHasSubscription(true);
     }
   };
 
