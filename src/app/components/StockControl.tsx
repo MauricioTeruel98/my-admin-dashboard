@@ -29,6 +29,7 @@ export default function StockControl() {
   useEffect(() => {
     fetchProducts()
   }, [])
+  
 
   const fetchProducts = async () => {
     setIsLoading(true)
@@ -40,6 +41,7 @@ export default function StockControl() {
       .select('*')
       .eq('is_active', true)
       .eq("user_id", user?.id)
+
 
     if (error) {
       console.error('Error fetching products:', error)
