@@ -6,14 +6,18 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { toast } from 'react-hot-toast'
 import Image from 'next/image'
 import CreativeLoader from '@/components/ui/CreativeLoader'
+import Link from 'next/link'
 
 export default function Register() {
+  const [name, setName] = useState('')
+  const [businessName, setBusinessName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -21,9 +25,21 @@ export default function Register() {
     e.preventDefault()
     setLoading(true)
 
+    if (password !== confirmPassword) {
+      toast.error('Las contraseñas no coinciden')
+      setLoading(false)
+      return
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name,
+          business_name: businessName,
+        }
+      }
     })
 
     if (error) {
@@ -65,6 +81,26 @@ export default function Register() {
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
               <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="businessName">Nombre del Negocio</Label>
+                <Input
+                  id="businessName"
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -84,11 +120,29 @@ export default function Register() {
                   required
                 />
               </div>
+              <div>
+                <Label htmlFor="confirmPassword">Repetir Contraseña</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <CreativeLoader /> : 'Registrarse'}
               </Button>
             </form>
           </CardContent>
+          <CardFooter>
+            <div className="text-sm">
+              ¿Ya tienes una cuenta?{' '}
+              <Link href="/login" className="text-primary hover:underline">
+                Inicia sesión
+              </Link>
+            </div>
+          </CardFooter>
         </Card>
       </div>
     </div>

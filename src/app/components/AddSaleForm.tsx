@@ -22,10 +22,18 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
   const [visibleProducts, setVisibleProducts] = useState(6)
 
   const filteredProducts = useMemo(() => {
-    return products.filter(product =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  }, [products, searchTerm])
+    return products.filter(product => {
+      if (product.is_active === true) {
+        const searchTermLower = searchTerm.toLowerCase();
+        return (
+          product.name.toLowerCase().includes(searchTermLower) ||
+          product.code.toLowerCase().includes(searchTermLower) // Filtra también por código
+        );
+      }
+      return false;
+    });
+  }, [products, searchTerm]);
+
 
   const displayedProducts = filteredProducts.slice(0, visibleProducts)
 

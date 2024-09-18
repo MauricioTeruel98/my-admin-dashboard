@@ -1,3 +1,5 @@
+import { User as SupabaseUser } from '@supabase/supabase-js'
+
 export interface Product {
   id: number;
   name: string;
@@ -30,4 +32,18 @@ export interface Sale {
 export interface SalesData {
   date: string;
   total: number;
+}
+
+export interface Subscription {
+  status: string;
+  current_period_end: Date; 
+}
+
+export type User = SupabaseUser
+
+export interface UserA extends SupabaseUser {
+  user_metadata: {
+    name: string;
+    business_name: string;
+  };
 }
