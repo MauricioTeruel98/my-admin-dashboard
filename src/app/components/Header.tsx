@@ -14,7 +14,6 @@ interface HeaderProps {
 
 export default function Header({ isDrawerOpen, setIsDrawerOpen, activeTab, handleTabChange }: HeaderProps) {
   const { user } = useAuth()
-  console.log(user);
   return (
     <header className="bg-amber-950 shadow-md p-4 flex justify-between items-center border-b border-amber-900">
       <div className="flex items-center">
