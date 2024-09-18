@@ -25,12 +25,17 @@ export default function StockControl() {
   useEffect(() => {
     fetchProducts()
   }, [])
+  
 
   const fetchProducts = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { data, error } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
+      .eq("user_id", user?.id);
 
     if (error) {
       console.error('Error fetching products:', error)
