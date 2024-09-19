@@ -123,7 +123,6 @@ export default function AddProductForm({ refreshData }: AddProductFormProps) {
               id="category"
               value={newProduct.category}
               onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-              required
               className="border-primary"
             />
           </div>
