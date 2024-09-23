@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/supabase/supabase'
 import { toast } from 'react-hot-toast'
 import { Product } from '../types'
 import { Button } from "@/components/ui/button"
@@ -37,28 +36,25 @@ export default function EditProductModal({
     e.preventDefault()
     if (!product) return
 
-    const { data, error } = await supabase
-      .from('products')
-      .update({
-        name: product.name,
-        code: product.code,
-        price: product.price,
-        unit: product.unit,
-        category: product.category,
-        stock: product.stock
+    try {
+      const response = await fetch('/api/products', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(product),
       })
-      .eq('id', product.id)
-      .select()
 
-    if (error) {
-      console.error('Error al actualizar producto:', error)
-      toast.error('No se pudo actualizar el producto')
-    } else if (data) {
-      refreshData()
+      if (!response.ok) {
+        throw new Error('Error al actualizar producto')
+      }
+
+      await refreshData()
       setIsEditModalOpen(false)
       toast.success('Producto actualizado exitosamente')
-    } else {
-      toast.error('No se realizaron cambios')
+    } catch (error) {
+      console.error('Error al actualizar producto:', error)
+      toast.error('No se pudo actualizar el producto')
     }
   }
 

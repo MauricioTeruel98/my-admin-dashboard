@@ -30,7 +30,7 @@ export default function ProductManagement({ products, refreshData }: ProductMana
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <AddProductForm refreshData={refreshData} />
+          <AddProductForm refreshData={refreshData} userId={1234} />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

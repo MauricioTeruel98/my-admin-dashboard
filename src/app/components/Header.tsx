@@ -18,7 +18,7 @@ export default function Header({ isDrawerOpen, setIsDrawerOpen, activeTab, handl
     <header className="bg-amber-950 shadow-md p-4 flex justify-between items-center border-b border-amber-900">
       <div className="flex items-center">
         <LayoutDashboard className="h-6 w-6 mr-2 text-amber-500" />
-        <h1 className="text-xl font-bold text-amber-100">{user?.user_metadata.business_name}</h1>
+        <h1 className="text-xl font-bold text-amber-100">{user?.businessName}</h1>
       </div>
       <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <SheetTrigger asChild>

@@ -3,17 +3,21 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/supabase/supabase'
 import { Button } from "@/components/ui/button"
 import { Toaster } from 'react-hot-toast'
 import { LayoutDashboard, LogOut, Menu, X } from 'lucide-react'
 import UserProfile from "../components/UserProfile"
-import { Subscription } from '../types'
 import { toast } from 'react-hot-toast'
 
+interface Subscription {
+  id: number;
+  status: string;
+  current_period_end: string;
+}
+
 export default function ProfilePage() {
-  const { user } = useAuth()
-  const [subscription, setSubscription] = useState<Subscription>()
+  const { user, logout } = useAuth()
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const router = useRouter()
 
@@ -24,25 +28,31 @@ export default function ProfilePage() {
   }, [user])
 
   const fetchSubscription = async () => {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', user?.id)
-      .single()
-
-    if (error) {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/subscriptions/check', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      if (data.hasActiveSubscription) {
+        setSubscription(data.subscription)
+      } else {
+        setSubscription(null)
+      }
+    } catch (error) {
       console.error('Error fetching subscription:', error)
-    } else {
-      setSubscription(data)
+      setSubscription(null)
     }
   }
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      toast.error('Error al cerrar sesión')
-    } else {
+    try {
+      await logout()
       router.push('/login')
+    } catch (error) {
+      toast.error('Error al cerrar sesión')
     }
   }
 

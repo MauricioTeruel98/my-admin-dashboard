@@ -1,4 +1,3 @@
-import { supabase } from '@/supabase/supabase'
 import { toast } from 'react-hot-toast'
 import { Product } from '../types'
 import { Button } from "@/components/ui/button"
@@ -27,18 +26,21 @@ export default function DeleteProductModal({
   const handleProductDelete = async () => {
     if (!productToDelete) return
 
-    const { error } = await supabase
-      .from('products')
-      .update({ is_active: false })
-      .eq('id', productToDelete.id)
+    try {
+      const response = await fetch(`/api/products?id=${productToDelete.id}`, {
+        method: 'DELETE',
+      })
 
-    if (error) {
-      console.error('Error al desactivar producto:', error)
-      toast.error('No se pudo desactivar el producto')
-    } else {
-      refreshData()
+      if (!response.ok) {
+        throw new Error('Error al desactivar producto')
+      }
+
+      await refreshData()
       setIsDeleteModalOpen(false)
       toast.success('Producto desactivado exitosamente')
+    } catch (error) {
+      console.error('Error al desactivar producto:', error)
+      toast.error('No se pudo desactivar el producto')
     }
   }
 

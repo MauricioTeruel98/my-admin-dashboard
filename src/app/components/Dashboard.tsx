@@ -14,8 +14,10 @@ import StockControl from './StockControl'
 import PriceModification from './PriceModification'
 import Footer from './Footer'
 import UserProfile from './UserProfile'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('products')
   const [products, setProducts] = useState<Product[]>([])
   const [sales, setSales] = useState<Sale[]>([])
@@ -28,9 +30,9 @@ export default function Dashboard() {
   }
 
   const refreshData = useCallback(async () => {
-    const fetchedProducts = await fetchProducts(supabase)
-    const fetchedSales = await fetchSales(supabase)
-    const fetchedSalesData = await fetchSalesData(supabase)
+    const fetchedProducts = await fetchProducts(user?.id)
+    const fetchedSales = await fetchSales(user?.id)
+    const fetchedSalesData = await fetchSalesData(user?.id)
 
     setProducts(fetchedProducts)
     setSales(fetchedSales)

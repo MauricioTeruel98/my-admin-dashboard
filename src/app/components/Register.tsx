@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/supabase/supabase'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,22 +30,22 @@ export default function Register() {
       return
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          business_name: businessName,
-        }
-      }
-    })
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, businessName }),
+      })
 
-    if (error) {
-      toast.error(error.message)
-    } else if (data.user) {
-      toast.success('Registro exitoso. Por favor, verifica tu email.')
-      router.push('/login')
+      if (response.ok) {
+        toast.success('Registro exitoso. Por favor, inicia sesión.')
+        router.push('/login')
+      } else {
+        const data = await response.json()
+        toast.error(data.message || 'Error en el registro')
+      }
+    } catch (error) {
+      toast.error('Error en el registro')
     }
 
     setLoading(false)

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/supabase/supabase'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,41 +11,38 @@ import Image from 'next/image'
 import CreativeLoader from '@/components/ui/CreativeLoader'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
-export default function Login() {
+export default function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (error) {
-      let errorMessage = 'Ha ocurrido un error durante el inicio de sesión'
-      switch (error.message) {
-        case 'Invalid login credentials':
-          errorMessage = 'Credenciales de inicio de sesión inválidas'
-          break
-        case 'Email not confirmed':
-          errorMessage = 'El email no ha sido confirmado'
-          break
-        case 'User not found':
-          errorMessage = 'Usuario no encontrado'
-          break
-        // Añade más casos según sea necesario
+      if (response.ok) {
+        const data = await response.json()
+        login(data.token, data.user)
+        toast.success('Inicio de sesión exitoso')
+        router.push('/dashboard')
+      } else {
+        const data = await response.json()
+        toast.error(data.message || 'Error en el inicio de sesión')
       }
-      toast.error(errorMessage)
-    } else if (data.user) {
-      toast.success('Inicio de sesión exitoso')
-      router.push('/dashboard')
+    } catch (error) {
+      toast.error('Error en el inicio de sesión')
     }
 
     setLoading(false)

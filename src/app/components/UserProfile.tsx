@@ -2,63 +2,112 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/supabase/supabase'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import Subscription from './Suscription'
-import { UserCircle, CreditCard, Building2, Save } from 'lucide-react'
-import { Subscription as SubscriptionType, User } from '../types'
+import { UserCircle, CreditCard, Building2, Save, Plus } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+
+interface Subscription {
+  id: number;
+  status: string;
+  current_period_end: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  businessName: string;
+}
 
 export default function UserProfile() {
   const { user, setUser } = useAuth()
-  const [subscription, setSubscription] = useState<SubscriptionType>()
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editedUser, setEditedUser] = useState({
     name: '',
     email: '',
-    business_name: ''
+    businessName: ''
   })
 
   useEffect(() => {
     if (user) {
       fetchSubscription()
       setEditedUser({
-        name: user.user_metadata.name || '',
+        name: user.name || '',
         email: user.email || '',
-        business_name: user.user_metadata.business_name || ''
+        businessName: user.businessName || ''
       })
     }
   }, [user])
 
   const fetchSubscription = async () => {
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', user?.id)
-      .single()
-
-    if (error) {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/subscriptions/check', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      if (data.hasActiveSubscription) {
+        setSubscription(data.subscription)
+      } else {
+        setSubscription(null)
+      }
+    } catch (error) {
       console.error('Error fetching subscription:', error)
-    } else {
-      setSubscription(data)
+      setSubscription(null)
     }
   }
 
   const handleSave = async () => {
-    const { data, error } = await supabase.auth.updateUser({
-      email: editedUser.email,
-      data: { name: editedUser.name, business_name: editedUser.business_name }
-    })
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/users/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editedUser)
+      })
 
-    if (error) {
+      if (response.ok) {
+        const updatedUser = await response.json()
+        setUser(updatedUser)
+        toast.success('Perfil actualizado correctamente')
+        setIsModalOpen(false)
+      } else {
+        toast.error('Error al actualizar el perfil')
+      }
+    } catch (error) {
       toast.error('Error al actualizar el perfil')
-    } else if (data.user) {
-      setUser(data.user)
-      toast.success('Perfil actualizado correctamente')
-      setIsModalOpen(false)
+    }
+  }
+
+  const handleCreateTestSubscription = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/subscriptions/create-test', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const newSubscription = await response.json()
+        setSubscription(newSubscription)
+        toast.success('Suscripción de prueba creada correctamente')
+        fetchSubscription()
+      } else {
+        toast.error('Error al crear la suscripción de prueba')
+      }
+    } catch (error) {
+      toast.error('Error al crear la suscripción de prueba')
     }
   }
 
@@ -83,7 +132,7 @@ export default function UserProfile() {
           <CardContent>
             <div className="space-y-2">
               <p className="text-sm md:text-base text-foreground">
-                <span className="font-semibold">Nombre:</span> {user.user_metadata.name}
+                <span className="font-semibold">Nombre:</span> {user.name}
               </p>
               <p className="text-sm md:text-base text-foreground">
                 <span className="font-semibold">Email:</span> {user.email}
@@ -101,7 +150,7 @@ export default function UserProfile() {
           </CardHeader>
           <CardContent>
             <p className="text-sm md:text-base text-foreground">
-              <span className="font-semibold">Nombre del Negocio:</span> {user.user_metadata.business_name}
+              <span className="font-semibold">Nombre del Negocio:</span> {user.businessName}
             </p>
           </CardContent>
         </Card>
@@ -124,7 +173,13 @@ export default function UserProfile() {
                 </p>
               </div>
             ) : (
-              <Subscription user={user} />
+              <div className="space-y-4">
+                <p className="text-sm md:text-base text-foreground">No tienes una suscripción activa.</p>
+                <Button onClick={handleCreateTestSubscription}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Suscripción de Prueba
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -158,13 +213,13 @@ export default function UserProfile() {
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="business_name" className="text-sm font-medium text-foreground">
+              <label htmlFor="businessName" className="text-sm font-medium text-foreground">
                 Nombre del Negocio
               </label>
               <Input
-                id="business_name"
-                value={editedUser.business_name}
-                onChange={(e) => setEditedUser({ ...editedUser, business_name: e.target.value })}
+                id="businessName"
+                value={editedUser.businessName}
+                onChange={(e) => setEditedUser({ ...editedUser, businessName: e.target.value })}
               />
             </div>
           </div>
