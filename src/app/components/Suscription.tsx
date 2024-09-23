@@ -12,7 +12,7 @@ declare global {
     }
 }
 
-export default function Subscription({ user }: {user: User}) {
+export default function Subscription({ user }: { user: User }) {
     const [loading, setLoading] = useState(false)
     const [mp, setMp] = useState<any>(null)
     const router = useRouter()
@@ -55,6 +55,8 @@ export default function Subscription({ user }: {user: User}) {
 
             const { id } = await response.json()
 
+            console.log('Preference ID received:', id);
+
             if (mp) {
                 const checkout = mp.checkout({
                     preference: {
@@ -66,6 +68,16 @@ export default function Subscription({ user }: {user: User}) {
                 checkout.render({
                     container: '.cho-container',
                     label: 'Pagar',
+                }).then((result: any) => {
+                    if (result.status === 'approved' || result.status === 'pending') {
+                        toast.success('Pago procesado correctamente');
+                        router.push('/dashboard');
+                    } else {
+                        toast.error('Hubo un problema con el pago');
+                    }
+                }).catch((error: any) => {
+                    console.error('Error en el checkout:', error);
+                    toast.error('Error al procesar el pago');
                 });
             }
         } catch (error) {

@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 });
     }
 
+    console.log('Creating preference for user:', user.id);
+
     const preference = new Preference(client);
     const preferenceData = {
       items: [
@@ -32,10 +34,13 @@ export async function POST(request: NextRequest) {
       },
       auto_return: 'approved' as const,
       external_reference: user.id.toString(),
+      notification_url: `${request.headers.get('origin')}/api/mercadopago-webhook`,
     };
 
     const response = await preference.create({ body: preferenceData });
     
+    console.log('Preference created:', response.id);
+
     return NextResponse.json({ id: response.id });
   } catch (error: any) {
     console.error('Error creating preference:', error);

@@ -1,32 +1,29 @@
-// ARCHIVO NO USADO PERO NO LO ELIMINO POR LAS DUDAS
-
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+import db from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status');
   const userId = searchParams.get('user_id');
 
+  console.log('Handle subscription called:', { status, userId });
+
   if (status === 'success' && userId) {
     try {
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .upsert({ 
-          user_id: userId,
-          status: 'active',
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 días desde ahora
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          plan_id: 'monthly_plan',
-          price: 1000,
-          currency: 'ARS'
-        });
+      const [result] = await db.query(
+        'INSERT INTO subscriptions (user_id, status, current_period_start, current_period_end) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE status = ?, current_period_start = ?, current_period_end = ?',
+        [
+          userId,
+          'active',
+          new Date(),
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          'active',
+          new Date(),
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        ]
+      );
 
-      if (error) throw error;
+      console.log('Subscription updated:', result);
 
       return NextResponse.redirect(`${request.headers.get('origin')}/dashboard`);
     } catch (error) {
@@ -34,6 +31,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${request.headers.get('origin')}/error`);
     }
   } else {
+    console.log('Payment not successful or user ID missing');
     return NextResponse.redirect(`${request.headers.get('origin')}/error`);
   }
 }
