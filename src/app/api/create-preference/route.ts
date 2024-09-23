@@ -1,13 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { getUserFromToken } from '@/lib/auth';
 
 const client = new MercadoPagoConfig({ 
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! 
 });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { user_id } = await request.json();
+    const user = await getUserFromToken(request);
+
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 });
+    }
 
     const preference = new Preference(client);
     const preferenceData = {
@@ -21,12 +26,12 @@ export async function POST(request: Request) {
         }
       ],
       back_urls: {
-        success: `${request.headers.get('origin')}/api/handle-subscription?status=success&user_id=${user_id}`,
-        failure: `${request.headers.get('origin')}/api/handle-subscription?status=failure&user_id=${user_id}`,
-        pending: `${request.headers.get('origin')}/api/handle-subscription?status=pending&user_id=${user_id}`,
+        success: `${request.headers.get('origin')}/api/handle-subscription?status=success&user_id=${user.id}`,
+        failure: `${request.headers.get('origin')}/api/handle-subscription?status=failure&user_id=${user.id}`,
+        pending: `${request.headers.get('origin')}/api/handle-subscription?status=pending&user_id=${user.id}`,
       },
       auto_return: 'approved' as const,
-      external_reference: user_id,
+      external_reference: user.id.toString(),
     };
 
     const response = await preference.create({ body: preferenceData });

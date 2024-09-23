@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { supabase } from '@/supabase/supabase'
 import { toast } from 'react-hot-toast'
 import { User } from '../types'
 
@@ -38,10 +37,12 @@ export default function Subscription({ user }: {user: User}) {
         setLoading(true)
 
         try {
+            const token = localStorage.getItem('token')
             const response = await fetch('/api/create-preference', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     user_id: user.id,
@@ -79,28 +80,21 @@ export default function Subscription({ user }: {user: User}) {
         setLoading(true)
 
         try {
-            // Simular una transacción exitosa
-            await new Promise(resolve => setTimeout(resolve, 2000)) // Simular delay de red
+            const token = localStorage.getItem('token')
+            const response = await fetch('/api/subscriptions/create-test', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
 
-            // Actualizar el estado de la suscripción en Supabase
-            const { data, error } = await supabase
-                .from('subscriptions')
-                .upsert({
-                    user_id: user.id,
-                    status: 'active',
-                    current_period_start: new Date().toISOString(),
-                    current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 días desde ahora
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    plan_id: 'test_plan',
-                    price: 1000,
-                    currency: 'ARS'
-                })
-
-            if (error) throw error
-
-            toast.success('Transacción de prueba exitosa')
-            router.push('/dashboard')
+            if (response.ok) {
+                const newSubscription = await response.json()
+                toast.success('Suscripción de prueba creada correctamente')
+                router.push('/dashboard')
+            } else {
+                toast.error('Error al crear la suscripción de prueba')
+            }
         } catch (error) {
             console.error('Error en la transacción de prueba:', error)
             toast.error('Error en la transacción de prueba')

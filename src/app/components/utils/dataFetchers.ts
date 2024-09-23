@@ -86,18 +86,6 @@ export async function fetchProducts(
   }
 }
 
-/*
-export async function fetchProducts(userId: number): Promise<Product[]> {
-  try {
-    const response = await fetch(`/api/products?userId=${userId}`);
-    if (!response.ok) throw new Error('Error al obtener productos');
-    return await response.json();
-  } catch (error) {
-    console.error("Error al obtener productos:", error);
-    return [];
-  }
-}*/
-
 export async function fetchSales(
   userId: number,
   token: string

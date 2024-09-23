@@ -39,7 +39,12 @@ export interface Subscription {
   current_period_end: Date; 
 }
 
-export type User = SupabaseUser
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  businessName: string;
+}
 
 export interface UserA extends SupabaseUser {
   user_metadata: {

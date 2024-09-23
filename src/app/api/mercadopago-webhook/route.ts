@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
-import { createClient } from '@supabase/supabase-js';
+import db from '@/lib/db';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
-// Configurar MercadoPago
 const client = new MercadoPagoConfig({ 
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! 
 });
@@ -22,16 +19,17 @@ export async function POST(request: Request) {
       if (paymentInfo.status === 'approved') {
         const userId = paymentInfo.external_reference;
 
-        // Actualizar la suscripción en Supabase
-        const { data, error } = await supabase
-          .from('subscriptions')
-          .upsert({ 
-            user_id: userId, 
-            status: 'active',
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 días desde ahora
-          });
-
-        if (error) throw error;
+        // Actualizar la suscripción en MySQL
+        await db.query(
+          'INSERT INTO subscriptions (user_id, status, current_period_end) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE status = ?, current_period_end = ?',
+          [
+            userId,
+            'active',
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            'active',
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          ]
+        );
       }
     }
 

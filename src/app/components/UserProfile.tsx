@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { UserCircle, CreditCard, Building2, Save, Plus } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { fetchUpdateUser } from './utils/dataFetchers'
+import Subscription from './Suscription'
 
 interface Subscription {
   id: number;
@@ -169,6 +170,7 @@ export default function UserProfile() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+
             {subscription ? (
               <div className="space-y-2">
                 <p className="text-sm md:text-base text-foreground">
@@ -181,10 +183,11 @@ export default function UserProfile() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm md:text-base text-foreground">No tienes una suscripción activa.</p>
-                <Button onClick={handleCreateTestSubscription}>
+                {/* <Button onClick={handleCreateTestSubscription}>
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Suscripción de Prueba
-                </Button>
+                </Button> */}
+                <Subscription user={user} />
               </div>
             )}
           </CardContent>

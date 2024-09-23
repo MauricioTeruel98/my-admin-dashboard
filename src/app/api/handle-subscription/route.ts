@@ -1,3 +1,5 @@
+// ARCHIVO NO USADO PERO NO LO ELIMINO POR LAS DUDAS
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
