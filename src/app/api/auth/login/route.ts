@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '@/lib/db';
+import { RowDataPacket } from 'mysql2';
 
 export async function POST(request: Request) {
   const { email, password } = await request.json();
 
   try {
-    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM users WHERE email = ?', [email]);
     const user = rows[0];
 
     if (!user) {

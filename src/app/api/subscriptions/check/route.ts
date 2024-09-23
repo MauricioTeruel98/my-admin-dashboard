@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { RowDataPacket } from 'mysql2';
 
 
 export async function GET(request: Request) {
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
 
   try {
     const decoded = verifyToken(token);
-    const [rows] = await db.query(
+    const [rows, fields]: [RowDataPacket[], any] = await db.query(
       'SELECT * FROM subscriptions WHERE user_id = ? AND status = "active" AND current_period_end > NOW()',
       [decoded.userId]
     );

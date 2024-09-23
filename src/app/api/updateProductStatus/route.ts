@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '../../../lib/db'
 import { getUserFromToken } from '../../../lib/auth'
+import { ResultSetHeader } from 'mysql2';
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromToken(request);
     const { productId, isActive } = await request.json();
 
-    const [result] = await pool.query(
+    const [result]: [ResultSetHeader, any] = await pool.query(
       'UPDATE products SET is_active = ? WHERE id = ? AND user_id = ?',
       [isActive ? 1 : 0, productId, user.id]
     );

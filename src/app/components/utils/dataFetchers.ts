@@ -191,3 +191,30 @@ export async function toggleProductStatus(
     toast.error('No se pudo actualizar el estado del producto');
   }
 }
+
+export async function fetchUpdateUser(
+  userId: number,
+  token: string,
+  updatedUserData: { name: string, email: string, otherField?: string }
+): Promise<any> {
+  try {
+    const response = await fetch(`/api/users/update`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedUserData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update user");
+    }
+
+    const updatedUser = await response.json();
+    return updatedUser;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+}

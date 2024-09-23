@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import db from '@/lib/db';
+import { ResultSetHeader } from 'mysql2';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const user = await getUserFromToken(req);
 
@@ -11,9 +12,9 @@ export async function POST(req: Request) {
     }
 
     // Crear una suscripción de prueba
-    const [result] = await db.query(
+    const [result]: [ResultSetHeader, any] = await db.query(
       'INSERT INTO subscriptions (user_id, status, current_period_end) VALUES (?, ?, ?)',
-      [user.id, 'active', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)] // 30 días a partir de ahora
+      [user.id, 'active', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
     );
 
     const newSubscription = {

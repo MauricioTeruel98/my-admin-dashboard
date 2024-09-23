@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { UserCircle, CreditCard, Building2, Save, Plus } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { fetchUpdateUser } from './utils/dataFetchers'
 
 interface Subscription {
   id: number;
@@ -16,7 +17,7 @@ interface Subscription {
 }
 
 interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   businessName: string;
@@ -31,6 +32,8 @@ export default function UserProfile() {
     email: '',
     businessName: ''
   })
+
+  console.log(user);
 
   useEffect(() => {
     if (user) {
@@ -65,28 +68,31 @@ export default function UserProfile() {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/users/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(editedUser)
-      })
+      const token = localStorage.getItem('token');
+      const updatedUserData = {
+        name: editedUser.name,
+        email: editedUser.email,
+        businessName: editedUser.businessName
+      };
 
-      if (response.ok) {
-        const updatedUser = await response.json()
-        setUser(updatedUser)
-        toast.success('Perfil actualizado correctamente')
-        setIsModalOpen(false)
-      } else {
-        toast.error('Error al actualizar el perfil')
+      if (!token) {  // Verificar si el token es null
+        throw new Error('No se encontró un token de autenticación');
       }
+
+      if (!user?.id) {  // Verificar que user.id no sea undefined
+        throw new Error('El ID de usuario no está disponible');
+      }
+
+      const updatedUser = await fetchUpdateUser(user.id, token, updatedUserData); // Ahora user.id está garantizado
+
+      setUser(updatedUser);  // Actualizar el estado con el usuario actualizado
+      toast.success('Perfil actualizado correctamente');
+      setIsModalOpen(false);
     } catch (error) {
-      toast.error('Error al actualizar el perfil')
+      toast.error('Error al actualizar el perfil');
     }
-  }
+  };
+
 
   const handleCreateTestSubscription = async () => {
     try {
