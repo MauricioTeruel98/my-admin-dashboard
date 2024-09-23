@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '@/supabase/supabase'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { Product } from '../types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -29,25 +28,23 @@ export default function StockControl() {
   useEffect(() => {
     fetchProducts()
   }, [])
-  
 
   const fetchProducts = async () => {
     setIsLoading(true)
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .eq("user_id", user?.id)
-
-
-    if (error) {
+    try {
+      const response = await fetch('/api/products', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Error fetching products');
+      }
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
       console.error('Error fetching products:', error)
       toast.error('No se pudieron cargar los productos')
-    } else {
-      setProducts(data || [])
     }
     setIsLoading(false)
   }
@@ -69,27 +66,33 @@ export default function StockControl() {
   }
 
   const saveStockChanges = async () => {
-    const updates = Object.entries(stockChanges).map(([productId, change]) => ({
-      id: parseInt(productId),
-      stock: products.find(p => p.id === parseInt(productId))!.stock + change
-    }))
+    for (const [productId, change] of Object.entries(stockChanges)) {
+      try {
+        const response = await fetch('/api/updateStock', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ productId: parseInt(productId), stockChange: change }),
+        });
 
-    const { data, error } = await supabase
-      .from('products')
-      .upsert(updates)
-      .select()
-
-    if (error) {
-      console.error('Error updating stock:', error)
-      toast.error('No se pudo actualizar el stock')
-    } else if (data) {
-      setProducts(products.map(p => {
-        const update = updates.find(u => u.id === p.id)
-        return update ? { ...p, stock: update.stock } : p
-      }))
-      setStockChanges({})
-      toast.success('Stock actualizado exitosamente')
+        if (!response.ok) {
+          throw new Error('Error updating stock');
+        }
+      } catch (error) {
+        console.error('Error updating stock:', error);
+        toast.error(`No se pudo actualizar el stock para el producto ${productId}`);
+        return;
+      }
     }
+
+    setProducts(products.map(p => {
+      const change = stockChanges[p.id];
+      return change !== undefined ? { ...p, stock: p.stock + change } : p;
+    }));
+    setStockChanges({});
+    toast.success('Stock actualizado exitosamente');
   }
 
   const filteredProducts = products.filter(product =>
@@ -106,8 +109,8 @@ export default function StockControl() {
 
   const groupedProducts = {
     all: sortedProducts,
-    unidad: sortedProducts.filter(p => p.unit === 'unidad'),
-    peso: sortedProducts.filter(p => p.unit === 'peso')
+    unidad: sortedProducts.filter(p => p.unit === 'UNIDAD'),
+    peso: sortedProducts.filter(p => p.unit === 'PESO')
   }
 
   const currentProducts = groupedProducts[activeTab as keyof typeof groupedProducts]

@@ -9,7 +9,7 @@ export interface Product {
   category: string;
   stock: number;
   user_id: string;
-  is_active: boolean;
+  is_active: number;
 }
 
 export interface SaleItem {

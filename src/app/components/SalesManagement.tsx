@@ -1,5 +1,6 @@
+'use client'
+
 import { useState, useEffect } from 'react'
-import { supabase } from '@/supabase/supabase'
 import { Product, Sale } from '../types'
 import SalesList from './SalesList'
 import AddSaleForm from './AddSaleForm'
@@ -24,26 +25,19 @@ export default function SalesManagement({ products, refreshData }: SalesManageme
   }
 
   const fetchSales = async () => {
-    const { data: salesData, error: salesError } = await supabase
-      .from('sales')
-      .select(`
-        id,
-        total,
-        created_at,
-        items:product_sale(
-          product_id,
-          quantity,
-          unit_price,
-          subtotal,
-          product:products(name)
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    if (salesError) {
-      console.error('Error fetching sales:', salesError)
-    } else if (salesData) {
-      setSales(salesData as unknown as Sale[])
+    try {
+      const response = await fetch('/api/sales', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Error fetching sales');
+      }
+      const salesData = await response.json();
+      setSales(salesData);
+    } catch (error) {
+      console.error('Error fetching sales:', error);
     }
   }
 

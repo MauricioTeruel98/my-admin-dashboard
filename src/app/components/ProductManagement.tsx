@@ -6,6 +6,7 @@ import EditProductModal from './EditProductModal'
 import DeleteProductModal from './DeleteProductModal'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Plus } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ProductManagementProps {
   products: Product[]
@@ -13,6 +14,7 @@ interface ProductManagementProps {
 }
 
 export default function ProductManagement({ products, refreshData }: ProductManagementProps) {
+  const { user } = useAuth();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -30,7 +32,7 @@ export default function ProductManagement({ products, refreshData }: ProductMana
             </div>
           </AccordionTrigger>
           <AccordionContent>
-          <AddProductForm refreshData={refreshData} userId={1234} />
+            <AddProductForm refreshData={refreshData}/>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

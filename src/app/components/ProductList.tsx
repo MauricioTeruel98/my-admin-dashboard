@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Product } from '../types'
 import { Input } from "@/components/ui/input"
 import { Search } from 'lucide-react'
 import { Preloader } from './Preloader'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ProductGroup from './ProductGroup'
-import { supabase } from '@/supabase/supabase'
 import { toast } from 'react-hot-toast'
 import Pagination from './Pagination'
+import { toggleProductStatus } from './utils/dataFetchers'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,13 +60,13 @@ export default function ProductList({
 
     switch (activeTab) {
       case 'active':
-        return product.is_active && matchesSearch;
+        return product.is_active === 1 && matchesSearch;
       case 'inactive':
-        return !product.is_active && matchesSearch;
+        return product.is_active === 0 && matchesSearch;
       case 'unidad':
-        return product.is_active && product.unit === 'unidad' && matchesSearch;
+        return product.is_active === 1 && product.unit === 'UNIDAD' && matchesSearch;
       case 'peso':
-        return product.is_active && product.unit === 'peso' && matchesSearch;
+        return product.is_active === 1 && product.unit === 'PESO' && matchesSearch;
       default:
         return matchesSearch;
     }
@@ -91,8 +91,8 @@ export default function ProductList({
 
   const totalPages = Math.ceil(sortedProducts.length / itemsPerPage)
 
-  const toggleProductStatus = async (product: Product) => {
-    if (product.is_active) {
+  const handleToggleProductStatus = async (product: Product) => {
+    if (product.is_active === 1) {
       setProductToToggle(product)
       setIsConfirmDialogOpen(true)
     } else {
@@ -101,22 +101,14 @@ export default function ProductList({
   }
 
   const updateProductStatus = async (product: Product) => {
-    const { data, error } = await supabase
-      .from('products')
-      .update({ is_active: !product.is_active })
-      .eq('id', product.id)
-      .select()
-
-    if (error) {
-      console.error('Error updating product status:', error)
-      toast.error('No se pudo actualizar el estado del producto')
-    } else if (data) {
-      const updatedProduct = data[0] as Product
-      setLocalProducts(prevProducts => 
-        prevProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
-      )
-      toast.success(`Producto ${updatedProduct.is_active ? 'activado' : 'desactivado'} exitosamente`)
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('No se pudo autenticar. Por favor, inicie sesión nuevamente.');
+      return;
     }
+
+    await toggleProductStatus(product.id, product.is_active === 0, token);
+    await refreshData();
   }
 
   const handleConfirmToggle = async () => {
@@ -166,7 +158,7 @@ export default function ProductList({
                 setIsEditModalOpen={setIsEditModalOpen}
                 setProductToDelete={setProductToDelete}
                 setIsDeleteModalOpen={setIsDeleteModalOpen}
-                toggleProductStatus={toggleProductStatus}
+                toggleProductStatus={handleToggleProductStatus}
                 showStatus={activeTab === 'inactive'}
               />
               <Pagination

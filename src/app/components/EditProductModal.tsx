@@ -41,6 +41,7 @@ export default function EditProductModal({
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(product),
       })
@@ -122,8 +123,8 @@ export default function EditProductModal({
                   <SelectValue placeholder="Seleccionar unidad" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unidad">Por Unidad</SelectItem>
-                  <SelectItem value="peso">Por Peso</SelectItem>
+                  <SelectItem value="UNIDAD">Por Unidad</SelectItem>
+                  <SelectItem value="PESO">Por Peso</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -133,7 +134,6 @@ export default function EditProductModal({
                 id="edit-category"
                 value={product.category}
                 onChange={(e) => setProduct({ ...product, category: e.target.value })}
-                required
                 className="bg-input text-foreground border-primary"
               />
             </div>

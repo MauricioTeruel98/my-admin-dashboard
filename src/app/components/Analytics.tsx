@@ -16,9 +16,9 @@ import {
   ArcElement
 } from 'chart.js'
 import { Line, Bar, Doughnut } from 'react-chartjs-2'
-import { Product, SalesData } from '../types'
 import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { Product, SalesData } from '../types'
 
 ChartJS.register(
   CategoryScale, 
@@ -33,8 +33,8 @@ ChartJS.register(
 )
 
 interface AnalyticsProps {
-  salesData: SalesData[]
-  products: Product[]
+  salesData: SalesData[];
+  products: Product[];
 }
 
 export default function Analytics({ salesData, products }: AnalyticsProps) {

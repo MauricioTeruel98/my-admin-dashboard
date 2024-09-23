@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { supabase } from '@/supabase/supabase'
 import { toast } from 'react-hot-toast'
 import { Product, SaleItem } from '../types'
 import { Button } from "@/components/ui/button"
@@ -23,7 +22,7 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
-      if (product.is_active === true) {
+      if (product.is_active === 1) {
         const searchTermLower = searchTerm.toLowerCase();
         return (
           product.name.toLowerCase().includes(searchTermLower) ||
@@ -84,64 +83,38 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
     e.preventDefault()
     setIsLoading(true);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    const { data: saleData, error: saleError } = await supabase
-      .from('sales')
-      .insert([{ total: totalSale, user_id: user?.id }])
-      .select()
-
-    if (saleError) {
-      console.error('Error al añadir venta:', saleError)
-      toast.error('No se pudo registrar la venta')
-      setIsLoading(false)
-      return
-    }
-
-    const saleId = saleData[0].id
-
-    const productSalePromises = saleItems.map(item => {
-      return supabase.from('product_sale').insert({
-        product_id: item.product_id,
-        sale_id: saleId,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.subtotal
+    try {
+      const response = await fetch('/api/sales', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          total: totalSale,
+          items: saleItems.map(item => ({
+            productId: item.product_id,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            subtotal: item.subtotal
+          }))
+        }),
       })
-    })
 
-    const productSaleResults = await Promise.all(productSalePromises)
-    const productSaleErrors = productSaleResults.filter(result => result.error)
-
-    if (productSaleErrors.length > 0) {
-      console.error('Errores al añadir registros de product_sale:', productSaleErrors)
-      toast.error('No se pudieron registrar algunas ventas de productos')
-      setIsLoading(false)
-      return
-    }
-
-    // Update product stock
-    const stockUpdatePromises = saleItems.map(item => {
-      const product = products.find(p => p.id === item.product_id)
-      if (product) {
-        return supabase
-          .from('products')
-          .update({ stock: product.stock - item.quantity })
-          .eq('id', item.product_id)
+      if (!response.ok) {
+        throw new Error('Error al registrar la venta')
       }
-      return Promise.resolve()
-    })
 
-    await Promise.all(stockUpdatePromises)
-
-    refreshData()
-    setSaleItems([])
-    setSearchTerm('')
-    toast.success('Venta registrada y stock actualizado exitosamente')
-    setIsLoading(false);
+      await refreshData()
+      setSaleItems([])
+      setSearchTerm('')
+      toast.success('Venta registrada y stock actualizado exitosamente')
+    } catch (error) {
+      console.error('Error al registrar la venta:', error)
+      toast.error('No se pudo registrar la venta')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const loadMoreProducts = () => {

@@ -5,11 +5,15 @@ import { toast } from "react-hot-toast";
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function useProducts(userId: number) {
-  const { data, error, mutate } = useSWR(`/api/products?userId=${userId}`, fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    refreshInterval: 0,
-  });
+  const { data, error, mutate } = useSWR(
+    `/api/products?userId=${userId}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      refreshInterval: 0,
+    }
+  );
 
   return {
     products: data,
@@ -20,11 +24,15 @@ export function useProducts(userId: number) {
 }
 
 export function useSales(userId: number) {
-  const { data, error, mutate } = useSWR(`/api/sales?userId=${userId}`, fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    refreshInterval: 0,
-  });
+  const { data, error, mutate } = useSWR(
+    `/api/sales?userId=${userId}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      refreshInterval: 0,
+    }
+  );
 
   return {
     sales: data,
@@ -35,11 +43,15 @@ export function useSales(userId: number) {
 }
 
 export function useSalesData(userId: number) {
-  const { data, error, mutate } = useSWR(`/api/salesData?userId=${userId}`, fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    refreshInterval: 0,
-  });
+  const { data, error, mutate } = useSWR(
+    `/api/salesData?userId=${userId}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      refreshInterval: 0,
+    }
+  );
 
   return {
     salesData: data,
@@ -49,6 +61,32 @@ export function useSalesData(userId: number) {
   };
 }
 
+export async function fetchProducts(
+  userId: number,
+  token: string
+): Promise<Product[]> {
+  try {
+    const response = await fetch(`/api/products?userId=${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch products");
+    }
+
+    const data: Product[] = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
+  }
+}
+
+/*
 export async function fetchProducts(userId: number): Promise<Product[]> {
   try {
     const response = await fetch(`/api/products?userId=${userId}`);
@@ -58,12 +96,21 @@ export async function fetchProducts(userId: number): Promise<Product[]> {
     console.error("Error al obtener productos:", error);
     return [];
   }
-}
+}*/
 
-export async function fetchSales(userId: number): Promise<Sale[]> {
+export async function fetchSales(
+  userId: number,
+  token: string
+): Promise<Sale[]> {
   try {
-    const response = await fetch(`/api/sales?userId=${userId}`);
-    if (!response.ok) throw new Error('Error al obtener ventas');
+    const response = await fetch(`/api/sales?userId=${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error("Error al obtener ventas");
     const sales = await response.json();
     return sales.map((sale: any) => ({
       ...sale,
@@ -79,11 +126,21 @@ export async function fetchSales(userId: number): Promise<Sale[]> {
   }
 }
 
-export async function fetchSalesData(userId: number): Promise<SalesData[]> {
+export async function fetchSalesData(
+  userId: number,
+  token: string
+): Promise<SalesData[]> {
   try {
-    const response = await fetch(`/api/salesData?userId=${userId}`);
-    if (!response.ok) throw new Error('Error al obtener datos de ventas');
-    return await response.json();
+    const response = await fetch(`/api/salesData`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error("Error al obtener datos de ventas");
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error("Error al obtener datos de ventas:", error);
     toast.error("No se pudieron obtener los datos de ventas");
@@ -91,17 +148,46 @@ export async function fetchSalesData(userId: number): Promise<SalesData[]> {
   }
 }
 
-export async function updateProductStock(productId: number, stockChange: number): Promise<void> {
+export async function updateProductStock(
+  productId: number,
+  stockChange: number
+): Promise<void> {
   try {
-    const response = await fetch('/api/updateStock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/updateStock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ productId, stockChange }),
     });
-    if (!response.ok) throw new Error('Error al actualizar stock');
+    if (!response.ok) throw new Error("Error al actualizar stock");
     toast.success("Stock actualizado exitosamente");
   } catch (error) {
     console.error("Error al actualizar stock:", error);
     toast.error("No se pudo actualizar el stock");
+  }
+}
+
+export async function toggleProductStatus(
+  productId: number,
+  isActive: boolean,
+  token: string
+): Promise<void> {
+  try {
+    const response = await fetch('/api/updateProductStatus', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ productId, isActive }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error updating product status');
+    }
+
+    toast.success(`Producto ${isActive ? 'activado' : 'desactivado'} exitosamente`);
+  } catch (error) {
+    console.error('Error updating product status:', error);
+    toast.error('No se pudo actualizar el estado del producto');
   }
 }

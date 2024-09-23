@@ -29,6 +29,9 @@ export default function DeleteProductModal({
     try {
       const response = await fetch(`/api/products?id=${productToDelete.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       })
 
       if (!response.ok) {

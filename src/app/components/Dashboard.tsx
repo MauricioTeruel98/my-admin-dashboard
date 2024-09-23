@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Toaster } from 'react-hot-toast'
-import { supabase } from '@/supabase/supabase'
 import Header from './Header'
 import Sidebar from './Sidebar'
 import ProductManagement from './ProductManagement'
@@ -29,15 +28,19 @@ export default function Dashboard() {
     setIsDrawerOpen(false)
   }
 
-  const refreshData = useCallback(async () => {
-    const fetchedProducts = await fetchProducts(user?.id)
-    const fetchedSales = await fetchSales(user?.id)
-    const fetchedSalesData = await fetchSalesData(user?.id)
+  const token = localStorage.getItem('token');
 
-    setProducts(fetchedProducts)
-    setSales(fetchedSales)
-    setSalesData(fetchedSalesData)
-  }, [])
+  const refreshData = useCallback(async () => {
+    if (user?.id && token) {
+      const fetchedProducts = await fetchProducts(user.id, token)
+      const fetchedSales = await fetchSales(user.id, token)
+      const fetchedSalesData = await fetchSalesData(user.id, token)
+
+      setProducts(fetchedProducts)
+      setSales(fetchedSales)
+      setSalesData(fetchedSalesData)
+    }
+  }, [user, token])
 
   useEffect(() => {
     refreshData()

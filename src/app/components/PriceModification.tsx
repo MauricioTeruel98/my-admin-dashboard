@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '@/supabase/supabase'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { Product } from '../types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowUpDown, Search, Save } from 'lucide-react'
 import { Preloader } from './Preloader'
 import { Card, CardContent } from "@/components/ui/card"
+import { formatPrice } from '@/lib/utils'
 
 export default function PriceModification() {
     const [isLoading, setIsLoading] = useState(true)
@@ -27,23 +27,25 @@ export default function PriceModification() {
 
     const fetchProducts = async () => {
         setIsLoading(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('is_active', true)
-            .eq("user_id", user?.id)
-
-        if (error) {
+        try {
+            const response = await fetch('/api/products', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (!response.ok) {
+                throw new Error('Error fetching products');
+            }
+            const data = await response.json();
+            setProducts(data);
+            const initialSelectedProducts = data.reduce((acc: { [key: number]: boolean }, product: Product) => {
+                acc[product.id] = false;
+                return acc;
+            }, {});
+            setSelectedProducts(initialSelectedProducts);
+        } catch (error) {
             console.error('Error fetching products:', error)
             toast.error('No se pudieron cargar los productos')
-        } else {
-            setProducts(data || [])
-            const initialSelectedProducts = (data || []).reduce((acc, product) => {
-                acc[product.id] = false
-                return acc
-            }, {} as { [key: number]: boolean })
-            setSelectedProducts(initialSelectedProducts)
         }
         setIsLoading(false)
     }
@@ -77,7 +79,7 @@ export default function PriceModification() {
             filteredProducts.forEach(product => {
                 if (selectedProducts[product.id]) {
                     const currentPrice = product.price
-                    updatedPriceChanges[product.id] = currentPrice * (1 + modificationAmount / 100)
+                    updatedPriceChanges[product.id] = Number((currentPrice * (1 + modificationAmount / 100)).toFixed(2))
                 }
             })
             setPriceChanges(updatedPriceChanges)
@@ -90,21 +92,29 @@ export default function PriceModification() {
             price: newPrice
         }))
 
-        const { data, error } = await supabase
-            .from('products')
-            .upsert(updates)
-            .select()
+        try {
+            const response = await fetch('/api/updatePrices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(updates)
+            });
 
-        if (error) {
-            console.error('Error updating prices:', error)
-            toast.error('No se pudieron actualizar los precios')
-        } else {
+            if (!response.ok) {
+                throw new Error('Error updating prices');
+            }
+
             setProducts(products.map(p => {
                 const update = updates.find(u => u.id === p.id)
                 return update ? { ...p, price: update.price } : p
             }))
             setPriceChanges({})
             toast.success('Precios actualizados exitosamente')
+        } catch (error) {
+            console.error('Error updating prices:', error)
+            toast.error('No se pudieron actualizar los precios')
         }
     }
 
@@ -181,7 +191,7 @@ export default function PriceModification() {
                                         )}
                                         <TableCell className="text-foreground">{product.name}</TableCell>
                                         <TableCell className="text-foreground">{product.code}</TableCell>
-                                        <TableCell className="text-foreground">${product.price.toFixed(2)}</TableCell>
+                                        <TableCell className="text-foreground">{formatPrice(product.price)}</TableCell>
                                         <TableCell>
                                             <Input
                                                 type="number"

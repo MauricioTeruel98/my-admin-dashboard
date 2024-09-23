@@ -9,20 +9,17 @@ import { useAuth } from '@/contexts/AuthContext'
 
 interface AddProductFormProps {
   refreshData: () => Promise<void>
-  userId: number
 }
 
-export default function AddProductForm({ refreshData, userId }: AddProductFormProps) {
-  const {user} = useAuth();
+export default function AddProductForm({ refreshData }: AddProductFormProps) {
+  const { user } = useAuth();
   const [newProduct, setNewProduct] = useState({
     name: '',
     code: '',
     price: 0,
-    unit: 'unidad',
+    unit: 'UNIDAD',
     category: '',
-    stock: 0,
-    userId: user?.id,
-    isActive: true
+    stock: 0
   })
   const [isLoading, setIsLoading] = useState(false)
 
@@ -35,11 +32,9 @@ export default function AddProductForm({ refreshData, userId }: AddProductFormPr
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          ...newProduct,
-          userId: parseInt(String(newProduct.userId), 10) // Aseguramos que userId sea un entero
-        }),
+        body: JSON.stringify(newProduct),
       })
 
       if (!response.ok) {
@@ -48,7 +43,7 @@ export default function AddProductForm({ refreshData, userId }: AddProductFormPr
       }
 
       await refreshData()
-      setNewProduct({ name: '', code: '', price: 0, unit: 'unidad', category: '', stock: 0, userId: user?.id, isActive: true })
+      setNewProduct({ name: '', code: '', price: 0, unit: 'UNIDAD', category: '', stock: 0 })
       toast.success('Producto añadido exitosamente')
     } catch (error) {
       console.error('Error al añadir producto:', error)
@@ -124,8 +119,8 @@ export default function AddProductForm({ refreshData, userId }: AddProductFormPr
                 <SelectValue placeholder="Seleccionar unidad" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unidad">Por Unidad</SelectItem>
-                <SelectItem value="peso">Por Peso</SelectItem>
+                <SelectItem value="UNIDAD">Por Unidad</SelectItem>
+                <SelectItem value="PESO">Por Peso</SelectItem>
               </SelectContent>
             </Select>
           </div>

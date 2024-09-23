@@ -5,20 +5,20 @@ import { getUserFromToken } from '../../../lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromToken(request);
-    const { productId, stockChange } = await request.json();
+    const { productId, isActive } = await request.json();
 
     const [result] = await pool.query(
-      'UPDATE products SET stock = stock + ? WHERE id = ? AND user_id = ?',
-      [stockChange, productId, user.id]
+      'UPDATE products SET is_active = ? WHERE id = ? AND user_id = ?',
+      [isActive ? 1 : 0, productId, user.id]
     );
 
     if (result.affectedRows === 0) {
       return NextResponse.json({ error: 'Product not found or not owned by user' }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Stock updated successfully' });
+    return NextResponse.json({ message: 'Product status updated successfully' });
   } catch (error) {
-    console.error('Error updating stock:', error);
-    return NextResponse.json({ error: 'Error updating stock' }, { status: 500 });
+    console.error('Error updating product status:', error);
+    return NextResponse.json({ error: 'Error updating product status' }, { status: 500 });
   }
 }
