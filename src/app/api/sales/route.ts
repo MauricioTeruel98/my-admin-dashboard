@@ -5,6 +5,8 @@ import { getUserFromToken } from '../../../lib/auth'
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromToken(request);
+    
+    // Hacer la consulta con el orden deseado
     const [rows] = await pool.query(`
       SELECT s.id, s.total, s.created_at, 
              ps.product_id, ps.quantity, ps.unit_price, ps.subtotal,
@@ -16,18 +18,24 @@ export async function GET(request: NextRequest) {
       ORDER BY s.created_at DESC
     `, [user.id]);
 
-    // Group the results by sale
-    const sales = rows.reduce((acc: any, row: any) => {
-      if (!acc[row.id]) {
-        acc[row.id] = {
+    // Group the results by sale, ensuring the order is preserved
+    const salesMap: Record<number, any> = {};
+    const salesArray: any[] = [];
+
+    rows.forEach((row: any) => {
+      if (!salesMap[row.id]) {
+        const sale = {
           id: row.id,
           total: row.total,
           created_at: row.created_at,
           items: []
         };
+        salesMap[row.id] = sale;
+        salesArray.push(sale);  // Preserve the order in this array
       }
+
       if (row.product_id) {
-        acc[row.id].items.push({
+        salesMap[row.id].items.push({
           product_id: row.product_id,
           quantity: row.quantity,
           unit_price: row.unit_price,
@@ -35,15 +43,16 @@ export async function GET(request: NextRequest) {
           product: { name: row.product_name }
         });
       }
-      return acc;
-    }, {});
+    });
 
-    return NextResponse.json(Object.values(sales));
+    // Retornar la lista de ventas preservando el orden
+    return NextResponse.json(salesArray);  // Utilizamos el array directamente
   } catch (error) {
     console.error('Error al obtener ventas:', error);
     return NextResponse.json({ error: 'Error al obtener ventas' + error }, { status: 500 });
   }
 }
+
 
 export async function POST(request: NextRequest) {
   try {

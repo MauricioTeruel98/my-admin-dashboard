@@ -74,10 +74,13 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
       return item
     }))
   }
-
+  
   const totalSale = useMemo(() => {
-    return saleItems.reduce((sum, item) => sum + item.subtotal, 0)
+    return saleItems.reduce((sum, item) => sum + Number(item.subtotal), 0)  // Convertir subtotal a número
   }, [saleItems])
+  
+
+  console.log(totalSale);
 
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

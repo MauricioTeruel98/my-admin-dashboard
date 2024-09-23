@@ -162,9 +162,17 @@ export default function PriceModification() {
                                     />
                                 </div>
                                 <Button onClick={applyModification}>Aplicar</Button>
+
                             </>
                         )}
                     </div>
+                    {Object.keys(priceChanges).length > 0 && (
+                        <div className="flex justify-end">
+                            <Button onClick={savePriceChanges} className="bg-green-500 hover:bg-green-600 text-white">
+                                <Save className="mr-2 h-4 w-4" /> Guardar cambios
+                            </Button>
+                        </div>
+                    )}
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
@@ -205,13 +213,6 @@ export default function PriceModification() {
                             </TableBody>
                         </Table>
                     </div>
-                    {Object.keys(priceChanges).length > 0 && (
-                        <div className="flex justify-end">
-                            <Button onClick={savePriceChanges} className="bg-green-500 hover:bg-green-600 text-white">
-                                <Save className="mr-2 h-4 w-4" /> Guardar cambios
-                            </Button>
-                        </div>
-                    )}
                 </>
             )}
         </div>
