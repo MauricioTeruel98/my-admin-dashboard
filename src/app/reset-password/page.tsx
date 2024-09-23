@@ -1,36 +1,44 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from 'react-hot-toast'
 import Image from 'next/image'
 import CreativeLoader from '@/components/ui/CreativeLoader'
-import Link from 'next/link'
 
-export default function ForgotPassword() {
-    const [email, setEmail] = useState('')
+export default function ResetPassword() {
+    const [password, setPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const token = searchParams.get('token')
 
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
+        if (password !== confirmPassword) {
+            toast.error('Las contraseñas no coinciden')
+            setLoading(false)
+            return
+        }
+
         try {
-            const response = await fetch('/api/auth/forgot-password', {
+            const response = await fetch('/api/auth/reset-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ token, password }),
             })
 
             if (response.ok) {
-                toast.success('Se ha enviado un enlace de recuperación a tu correo electrónico.')
+                toast.success('Tu contraseña ha sido restablecida correctamente')
                 router.push('/login')
             } else {
                 const data = await response.json()
@@ -67,33 +75,35 @@ export default function ForgotPassword() {
                 </div>
                 <Card className="w-full bg-card">
                     <CardHeader>
-                        <CardTitle>Recuperar Contraseña</CardTitle>
+                        <CardTitle>Restablecer Contraseña</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleResetPassword} className="space-y-4">
                             <div>
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="password">Nueva Contraseña</Label>
                                 <Input
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    id="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                                <Input
+                                    id="confirmPassword"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
                                 />
                             </div>
                             <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? <CreativeLoader /> : 'Enviar enlace de recuperación'}
+                                {loading ? <CreativeLoader /> : 'Restablecer Contraseña'}
                             </Button>
                         </form>
                     </CardContent>
-                    <CardFooter>
-                        <div className="text-sm">
-                            ¿Recordaste tu contraseña?{' '}
-                            <Link href="/login" className="text-primary hover:underline">
-                                Volver al inicio de sesión
-                            </Link>
-                        </div>
-                    </CardFooter>
                 </Card>
             </div>
         </div>

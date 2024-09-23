@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto'
 
 interface JwtPayload {
   userId: number;
@@ -40,4 +41,8 @@ export async function getUserFromToken(req: NextRequest) {
   } catch (error) {
     throw new Error('Invalid token');
   }
+}
+
+export function generatePasswordResetToken(): string {
+  return crypto.randomBytes(32).toString('hex')
 }
