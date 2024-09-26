@@ -66,8 +66,8 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
       if (item.product_id === productId) {
         const product = products.find(p => p.id === productId)
         if (product) {
-          const newQuantity = field === 'quantity' ? Math.min(Math.max(1, value), product.stock) : value
-          const updatedItem = { ...item, [field]: newQuantity }
+          const newValue = field === 'quantity' ? Math.min(Math.max(1, value), product.stock) : value
+          const updatedItem = { ...item, [field]: newValue }
           updatedItem.subtotal = updatedItem.quantity * updatedItem.unit_price
           return updatedItem
         }
@@ -212,6 +212,16 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
                           className="w-20 border-primary"
                           min="1"
                           max={product?.stock}
+                        />
+                        
+                        <label htmlFor="price">Precio unitario</label>
+                        <Input
+                          type="number"
+                          id="price"
+                          value={item.unit_price}
+                          onChange={(e) => updateSaleItem(item.product_id, 'unit_price', parseFloat(e.target.value))}
+                          className="w-24 border-primary"
+                          min="0"
                         />
                         <span className="w-24 text-right"><b>Subtotal:</b> {formatPrice(item.subtotal)}</span>
                         <Button
