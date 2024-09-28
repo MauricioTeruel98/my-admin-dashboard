@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Package, ShoppingCart, BarChart, Boxes, X, UserCircle, DollarSign } from 'lucide-react'
+import { Package, ShoppingCart, BarChart, Boxes, X, UserCircle, DollarSign, ClipboardPlus } from 'lucide-react'
 import LogoutButton from "./LogoutButton"
 import { motion } from "framer-motion"
 
@@ -56,8 +56,8 @@ export default function Sidebar({ activeTab, handleTabChange, isDrawerOpen, setI
           className={`w-full justify-start ${activeTab === 'daily' ? 'bg-amber-900 text-amber-100' : 'text-amber-100 hover:text-amber-200 hover:bg-amber-900'}`}
           onClick={() => handleTabChange('daily')}
         >
-          <Boxes className="mr-2 h-4 w-4" />
-          Reporte
+          <ClipboardPlus className="mr-2 h-4 w-4" />
+          Reportes Diarios
         </Button>
         <Button
           variant={activeTab === 'prices' ? "default" : "ghost"}
