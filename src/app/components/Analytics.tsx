@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Product, SalesData } from '../types'
 import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import DailySalesReport from './DailySalesReport'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
+import { fetchPaymentMethodTotals } from './utils/dataFetchers'
+import { supabase } from '@/supabase/supabase'
 
 interface AnalyticsProps {
   salesData: SalesData[]
@@ -16,6 +18,15 @@ interface AnalyticsProps {
 
 export default function Analytics({ salesData, products }: AnalyticsProps) {
   const [timeRange, setTimeRange] = useState('7')
+  const [paymentMethodTotals, setPaymentMethodTotals] = useState({ cash: 0, transfer: 0 })
+
+  useEffect(() => {
+    const fetchTotals = async () => {
+      const totals = await fetchPaymentMethodTotals(supabase)
+      setPaymentMethodTotals(totals)
+    }
+    fetchTotals()
+  }, [])
 
   const filteredSalesData = salesData.slice(-parseInt(timeRange))
 
@@ -33,6 +44,13 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
   const averageSales = totalSales / filteredSalesData.length
   const lastDaySales = filteredSalesData[filteredSalesData.length - 1]?.total || 0
   const salesTrend = lastDaySales > averageSales
+
+  const paymentMethodData = [
+    { name: 'Efectivo', value: paymentMethodTotals.cash },
+    { name: 'Transferencia', value: paymentMethodTotals.transfer },
+  ]
+
+  const COLORS = ['#0088FE', '#00C49F']
 
   return (
     <div className="space-y-6">
@@ -60,13 +78,32 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card text-card-foreground md:col-span-2 mb-20">
+      <div className="xl:grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card className="bg-card text-card-foreground">
           <CardContent>
-            <DailySalesReport />
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Total por Método de Pago</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={paymentMethodData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {paymentMethodData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatPrice(value as number)} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-        
         <Card className="bg-card text-card-foreground">
           <CardContent>
             <h3 className="text-lg font-semibold mb-2 text-foreground">Ventas por Día</h3>

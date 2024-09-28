@@ -7,6 +7,8 @@ import { Product, SaleItem } from '../types'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 import { Loader2, Search, Trash2 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 
@@ -20,6 +22,7 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [visibleProducts, setVisibleProducts] = useState(6)
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash')
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
@@ -91,7 +94,7 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
 
     const { data: saleData, error: saleError } = await supabase
       .from('sales')
-      .insert([{ total: totalSale, user_id: user?.id }])
+      .insert([{ total: totalSale, user_id: user?.id, payment_method: paymentMethod }])
       .select()
 
     if (saleError) {
@@ -196,6 +199,19 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
                 </Button>
               </div>
             )}
+            <div className="space-y-2">
+            <h3 className="font-semibold">Método de pago:</h3>
+            <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'cash' | 'transfer')}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="cash" id="cash" />
+                <Label htmlFor="cash">Efectivo</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="transfer" id="transfer" />
+                <Label htmlFor="transfer">Transferencia</Label>
+              </div>
+            </RadioGroup>
+          </div>
             {saleItems.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold">Productos seleccionados:</h3>

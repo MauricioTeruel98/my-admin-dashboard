@@ -6,20 +6,20 @@ import { toast } from "react-hot-toast";
 // Función fetcher genérica
 const fetcher = (supabase: SupabaseClient) => async (key: string) => {
   switch (key) {
-    case 'products':
+    case "products":
       return fetchProducts(supabase);
-    case 'sales':
+    case "sales":
       return fetchSales(supabase);
-    case 'salesData':
+    case "salesData":
       return fetchSalesData(supabase);
     default:
-      throw new Error('Unknown key');
+      throw new Error("Unknown key");
   }
 };
 
 // Hook para productos
 export function useProducts(supabase: SupabaseClient) {
-  const { data, error, mutate } = useSWR('products', fetcher(supabase), {
+  const { data, error, mutate } = useSWR("products", fetcher(supabase), {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     refreshInterval: 0,
@@ -35,7 +35,7 @@ export function useProducts(supabase: SupabaseClient) {
 
 // Hook para ventas
 export function useSales(supabase: SupabaseClient) {
-  const { data, error, mutate } = useSWR('sales', fetcher(supabase), {
+  const { data, error, mutate } = useSWR("sales", fetcher(supabase), {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     refreshInterval: 0,
@@ -51,7 +51,7 @@ export function useSales(supabase: SupabaseClient) {
 
 // Hook para datos de ventas
 export function useSalesData(supabase: SupabaseClient) {
-  const { data, error, mutate } = useSWR('salesData', fetcher(supabase), {
+  const { data, error, mutate } = useSWR("salesData", fetcher(supabase), {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     refreshInterval: 0,
@@ -84,6 +84,7 @@ export async function fetchProducts(
   return data || [];
 }
 
+// Modificar la función fetchSales para incluir payment_method
 export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
   const {
     data: { user },
@@ -117,6 +118,36 @@ export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
       })
     ),
   }));
+}
+
+// Añadir una nueva función para obtener los totales por método de pago
+export async function fetchPaymentMethodTotals(
+  supabase: SupabaseClient
+): Promise<{ cash: number; transfer: number }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("sales")
+    .select("payment_method, total")
+    .eq("user_id", user?.id);
+
+  if (error) {
+    console.error("Error al obtener totales por método de pago:", error);
+    return { cash: 0, transfer: 0 };
+  }
+
+  return data.reduce(
+    (acc, sale) => {
+      if (sale.payment_method === "cash") {
+        acc.cash += sale.total;
+      } else if (sale.payment_method === "transfer") {
+        acc.transfer += sale.total;
+      }
+      return acc;
+    },
+    { cash: 0, transfer: 0 }
+  );
 }
 
 export async function fetchSalesData(
