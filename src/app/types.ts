@@ -27,7 +27,7 @@ export interface Sale {
   total: number;
   created_at: string;
   items: SaleItem[];
-  paymant_method: string;
+  payment_method: 'cash' | 'transfer'
 }
 
 export interface SalesData {

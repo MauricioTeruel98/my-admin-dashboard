@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ChevronDown, ChevronUp, Edit, Trash2 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { Badge } from "@/components/ui/badge"
 import EditSaleModal from './EditSaleModal'
 import DeleteSaleModal from './DeleteSaleModal'
-
 
 interface SalesListProps {
   sales: Sale[]
@@ -21,6 +21,8 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion, r
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [deletingSale, setDeletingSale] = useState<Sale | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const groupedSales = sales.reduce((acc, sale) => {
     const date = new Date(sale.created_at).toLocaleDateString()
@@ -30,6 +32,20 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion, r
     acc[date].push(sale)
     return acc
   }, {} as Record<string, Sale[]>)
+
+  const handleEditSave = async () => {
+    setIsEditing(true)
+    await refreshData()
+    setIsEditing(false)
+    setIsEditModalOpen(false)
+  }
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    await refreshData()
+    setIsDeleting(false)
+    setIsDeleteModalOpen(false)
+  }
 
   return (
     <div className="space-y-6">
@@ -46,7 +62,13 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion, r
                         <h3 className="text-base md:text-lg font-semibold text-foreground">Venta #{sale.id}</h3>
                         <p className="text-xs md:text-sm text-muted-foreground">{new Date(sale.created_at).toLocaleString()}</p>
                       </div>
-                      <div className="text-right flex items-center">
+                      <div className="flex items-center">
+                        <Badge
+                          variant={sale.payment_method === 'cash' ? 'default' : 'secondary'}
+                          className="mr-2"
+                        >
+                          {sale.payment_method === 'cash' ? 'Efectivo' : 'Transferencia'}
+                        </Badge>
                         <p className="text-base md:text-lg font-bold text-foreground mr-4">{formatPrice(sale.total)}</p>
                         <Button
                           variant="ghost"
@@ -122,13 +144,15 @@ export default function SalesList({ sales, expandedSales, toggleSaleExpansion, r
         sale={editingSale}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        refreshData={refreshData}
+        onSave={handleEditSave}
+        isLoading={isEditing}
       />
       <DeleteSaleModal
         sale={deletingSale}
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        refreshData={refreshData}
+        onDelete={handleDelete}
+        isLoading={isDeleting}
       />
     </div>
   )

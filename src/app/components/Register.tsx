@@ -31,6 +31,8 @@ export default function Register() {
       return
     }
 
+    /*
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -48,6 +50,8 @@ export default function Register() {
       toast.success('Registro exitoso. Por favor, verifica tu email.')
       router.push('/login')
     }
+
+    */
 
     setLoading(false)
   }

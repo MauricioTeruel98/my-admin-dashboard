@@ -34,6 +34,7 @@ export default function SalesManagement({ products, refreshProducts }: SalesMana
           id,
           total,
           created_at,
+          payment_method,
           items:product_sale(
             product_id,
             quantity,

@@ -6,19 +6,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { Loader2 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 
 interface EditSaleModalProps {
   sale: Sale | null
   isOpen: boolean
   onClose: () => void
-  refreshData: () => Promise<void>
+  onSave: () => Promise<void>
+  isLoading: boolean
 }
 
-export default function EditSaleModal({ sale, isOpen, onClose, refreshData }: EditSaleModalProps) {
+export default function EditSaleModal({ sale, isOpen, onClose, onSave, isLoading }: EditSaleModalProps) {
   const [editedSale, setEditedSale] = useState<Sale | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [originalItems, setOriginalItems] = useState<SaleItem[]>([])
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (sale) {
@@ -41,13 +46,13 @@ export default function EditSaleModal({ sale, isOpen, onClose, refreshData }: Ed
     if (editedSale) {
       const updatedItems = [...editedSale.items]
       const product = products.find(p => p.id === updatedItems[itemIndex].product_id)
-      
+
       if (product) {
         const originalQuantity = originalItems[itemIndex].quantity
         const availableStock = product.stock + originalQuantity
-        
+
         newQuantity = Math.min(Math.max(1, newQuantity), availableStock)
-        
+
         updatedItems[itemIndex] = {
           ...updatedItems[itemIndex],
           quantity: newQuantity,
@@ -72,13 +77,23 @@ export default function EditSaleModal({ sale, isOpen, onClose, refreshData }: Ed
     }
   }
 
+  const handlePaymentMethodChange = (newPaymentMethod: 'cash' | 'transfer') => {
+    if (editedSale) {
+      setEditedSale({ ...editedSale, payment_method: newPaymentMethod })
+    }
+  }
+
   const handleSave = async () => {
     if (editedSale) {
+      setIsSaving(true)
       try {
         // Actualizar la venta
         const { error: saleError } = await supabase
           .from('sales')
-          .update({ total: editedSale.total })
+          .update({
+            total: editedSale.total,
+            payment_method: editedSale.payment_method
+          })
           .eq('id', editedSale.id)
 
         if (saleError) throw saleError
@@ -110,11 +125,13 @@ export default function EditSaleModal({ sale, isOpen, onClose, refreshData }: Ed
         }
 
         toast.success('Venta actualizada exitosamente')
-        refreshData()
         onClose()
+        await onSave()
       } catch (error) {
         console.error('Error updating sale:', error)
         toast.error('No se pudo actualizar la venta')
+      } finally {
+        setIsSaving(false)
       }
     }
   }
@@ -168,9 +185,34 @@ export default function EditSaleModal({ sale, isOpen, onClose, refreshData }: Ed
             })}
           </TableBody>
         </Table>
+        <div className="mt-4">
+          <h3 className="font-semibold mb-2">Método de pago:</h3>
+          <RadioGroup
+            value={editedSale.payment_method}
+            onValueChange={(value) => handlePaymentMethodChange(value as 'cash' | 'transfer')}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="cash" id="edit-cash" />
+              <Label htmlFor="edit-cash">Efectivo</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="transfer" id="edit-transfer" />
+              <Label htmlFor="edit-transfer">Transferencia</Label>
+            </div>
+          </RadioGroup>
+        </div>
         <div className="flex justify-between items-center mt-4">
           <span className="font-bold">Total: {formatPrice(editedSale.total)}</span>
-          <Button onClick={handleSave}>Guardar Cambios</Button>
+          <Button onClick={handleSave} disabled={isSaving || isLoading}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar Cambios'
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
