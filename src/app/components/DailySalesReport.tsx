@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import DatePicker from './DatePicker'
+import { ArrowUpDown } from 'lucide-react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -42,29 +43,33 @@ export default function DailySalesReport() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   useEffect(() => {
     if (selectedDate) {
       fetchDailySales(selectedDate)
     }
-  }, [selectedDate])
+  }, [selectedDate, sortOrder])
 
   useEffect(() => {
     filterSales()
   }, [dailySales, searchTerm])
 
-  async function fetchDailySales(date: Date) {
-    const formattedDate = date.toISOString().split('T')[0]
+  const fetchDailySales = async (date: Date) => {
+    const formattedDate = date.toISOString().split('T')[0];
     const { data, error } = await supabase
-      .rpc('get_daily_sales_report', { report_date: formattedDate })
-
+      .rpc('get_daily_sales_report', { 
+        report_date: formattedDate,
+        sort_order: sortOrder
+      });
+  
     if (error) {
-      console.error('Error fetching daily sales:', error)
+      console.error('Error fetching daily sales:', error);
     } else {
-      setDailySales(data || [])
-      setFilteredSales(data || [])
+      setDailySales(data || []);
+      setFilteredSales(data || []);
     }
-  }
+  };
 
   function filterSales() {
     const filtered = dailySales.filter(sale =>
@@ -104,6 +109,10 @@ export default function DailySalesReport() {
     },
   }
 
+  const toggleSortOrder = () => {
+    setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc')
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -134,6 +143,10 @@ export default function DailySalesReport() {
                 <SelectItem value="20">20 por página</SelectItem>
               </SelectContent>
             </Select>
+            <Button onClick={toggleSortOrder} variant="outline">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              Ordenar {sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+            </Button>
           </div>
           <Table>
             <TableHeader>
