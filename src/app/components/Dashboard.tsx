@@ -14,6 +14,7 @@ import StockControl from './StockControl'
 import PriceModification from './PriceModification'
 import Footer from './Footer'
 import UserProfile from './UserProfile'
+import DailySalesReport from './DailySalesReport'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('products')
@@ -27,15 +28,40 @@ export default function Dashboard() {
     setIsDrawerOpen(false)
   }
 
-  const refreshData = useCallback(async () => {
-    const fetchedProducts = await fetchProducts(supabase)
-    const fetchedSales = await fetchSales(supabase)
-    const fetchedSalesData = await fetchSalesData(supabase)
-
-    setProducts(fetchedProducts)
-    setSales(fetchedSales)
-    setSalesData(fetchedSalesData)
+  const refreshProducts = useCallback(async () => {
+    try {
+      const fetchedProducts = await fetchProducts(supabase)
+      setProducts(fetchedProducts)
+    } catch (error) {
+      console.error('Error refreshing products:', error)
+    }
   }, [])
+
+  const refreshSales = useCallback(async () => {
+    try {
+      const fetchedSales = await fetchSales(supabase)
+      setSales(fetchedSales)
+    } catch (error) {
+      console.error('Error refreshing sales:', error)
+    }
+  }, [])
+
+  const refreshSalesData = useCallback(async () => {
+    try {
+      const fetchedSalesData = await fetchSalesData(supabase)
+      setSalesData(fetchedSalesData)
+    } catch (error) {
+      console.error('Error refreshing sales data:', error)
+    }
+  }, [])
+
+  const refreshData = useCallback(async () => {
+    await Promise.all([
+      refreshProducts(),
+      refreshSales(),
+      refreshSalesData()
+    ])
+  }, [refreshProducts, refreshSales, refreshSalesData])
 
   useEffect(() => {
     refreshData()
@@ -62,9 +88,10 @@ export default function Dashboard() {
         <main className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
             <div className="p-4 pb-20 lg:pb-4">
-              {activeTab === 'products' && <ProductManagement products={products} refreshData={refreshData} />}
-              {activeTab === 'sales' && <SalesManagement products={products} refreshData={refreshData} />}
+              {activeTab === 'products' && <ProductManagement products={products} refreshData={refreshProducts} />}
+              {activeTab === 'sales' && <SalesManagement products={products} refreshProducts={refreshProducts} />}
               {activeTab === 'stock' && <StockControl />}
+              {activeTab === 'daily' && <DailySalesReport />}
               {activeTab === 'prices' && <PriceModification />}
               {activeTab === 'analytics' && <Analytics salesData={salesData} products={products} />}
               {activeTab === 'profile' && <UserProfile />}

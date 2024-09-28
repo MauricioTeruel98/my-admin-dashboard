@@ -52,6 +52,14 @@ export default function Sidebar({ activeTab, handleTabChange, isDrawerOpen, setI
           Control de Stock
         </Button>
         <Button
+          variant={activeTab === 'daily' ? "default" : "ghost"}
+          className={`w-full justify-start ${activeTab === 'daily' ? 'bg-amber-900 text-amber-100' : 'text-amber-100 hover:text-amber-200 hover:bg-amber-900'}`}
+          onClick={() => handleTabChange('daily')}
+        >
+          <Boxes className="mr-2 h-4 w-4" />
+          Reporte
+        </Button>
+        <Button
           variant={activeTab === 'prices' ? "default" : "ghost"}
           className={`w-full justify-start ${activeTab === 'prices' ? 'bg-amber-900 text-amber-100' : 'text-amber-100 hover:text-amber-200 hover:bg-amber-900'}`}
           onClick={() => handleTabChange('prices')}

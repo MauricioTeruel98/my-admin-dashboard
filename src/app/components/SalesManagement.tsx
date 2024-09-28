@@ -1,19 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/supabase/supabase'
 import { Product, Sale } from '../types'
 import SalesList from './SalesList'
 import AddSaleForm from './AddSaleForm'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Plus } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 
 interface SalesManagementProps {
   products: Product[]
-  refreshData: () => Promise<void>
+  refreshProducts: () => Promise<void>
 }
 
-export default function SalesManagement({ products, refreshData }: SalesManagementProps) {
+export default function SalesManagement({ products, refreshProducts }: SalesManagementProps) {
   const [sales, setSales] = useState<Sale[]>([])
   const [expandedSales, setExpandedSales] = useState<number[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const toggleSaleExpansion = (saleId: number) => {
     setExpandedSales(prev =>
@@ -23,38 +25,46 @@ export default function SalesManagement({ products, refreshData }: SalesManageme
     )
   }
 
-  const fetchSales = async () => {
-    const { data: salesData, error: salesError } = await supabase
-      .from('sales')
-      .select(`
-        id,
-        total,
-        created_at,
-        items:product_sale(
-          product_id,
-          quantity,
-          unit_price,
-          subtotal,
-          product:products(name)
-        )
-      `)
-      .order('created_at', { ascending: false })
+  const fetchSales = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select(`
+          id,
+          total,
+          created_at,
+          items:product_sale(
+            product_id,
+            quantity,
+            unit_price,
+            subtotal,
+            product:products(name)
+          )
+        `)
+        .order('created_at', { ascending: false })
 
-    if (salesError) {
-      console.error('Error fetching sales:', salesError)
-    } else if (salesData) {
+      if (salesError) {
+        throw salesError
+      }
+
       setSales(salesData as unknown as Sale[])
+    } catch (error) {
+      console.error('Error fetching sales:', error)
+      toast.error('Error al cargar las ventas')
+    } finally {
+      setIsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchSales()
-  }, [])
+  }, [fetchSales])
 
-  const refreshSalesData = async () => {
+  const refreshSalesData = useCallback(async () => {
     await fetchSales()
-    await refreshData()
-  }
+    await refreshProducts()
+  }, [fetchSales, refreshProducts])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -73,7 +83,16 @@ export default function SalesManagement({ products, refreshData }: SalesManageme
         </AccordionItem>
       </Accordion>
       <div className="flex-grow overflow-auto">
-        <SalesList sales={sales} expandedSales={expandedSales} toggleSaleExpansion={toggleSaleExpansion} />
+        {isLoading ? (
+          <p>Cargando ventas...</p>
+        ) : (
+          <SalesList 
+            sales={sales} 
+            expandedSales={expandedSales} 
+            toggleSaleExpansion={toggleSaleExpansion} 
+            refreshData={refreshSalesData}
+          />
+        )}
       </div>
     </div>
   )
