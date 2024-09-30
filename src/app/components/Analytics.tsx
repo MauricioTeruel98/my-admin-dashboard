@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Product, SalesData } from '../types'
 import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { fetchPaymentMethodTotals } from './utils/dataFetchers'
 import { supabase } from '@/supabase/supabase'
 
@@ -15,29 +15,23 @@ interface AnalyticsProps {
 
 export default function Analytics({ salesData, products }: AnalyticsProps) {
   const [timeRange, setTimeRange] = useState('7')
-  const [paymentMethodTotals, setPaymentMethodTotals] = useState({ cash: 0, transfer: 0 })
+  const [paymentMethodData, setPaymentMethodData] = useState<{ date: string; cash: number; transfer: number }[]>([])
 
   useEffect(() => {
     const fetchTotals = async () => {
       const totals = await fetchPaymentMethodTotals(supabase)
-      setPaymentMethodTotals(totals)
+      setPaymentMethodData(totals)
     }
     fetchTotals()
   }, [])
 
   const filteredSalesData = salesData.slice(-parseInt(timeRange))
+  const filteredPaymentMethodData = paymentMethodData.slice(-parseInt(timeRange))
 
   const totalSales = filteredSalesData.reduce((sum, day) => sum + day.total, 0)
   const averageSales = totalSales / filteredSalesData.length
   const lastDaySales = filteredSalesData[filteredSalesData.length - 1]?.total || 0
   const salesTrend = lastDaySales > averageSales
-
-  const paymentMethodData = [
-    { name: 'Efectivo', value: paymentMethodTotals.cash },
-    { name: 'Transferencia', value: paymentMethodTotals.transfer },
-  ]
-
-  const COLORS = ['#0088FE', '#00C49F']
 
   return (
     <div className="space-y-6">
@@ -68,32 +62,23 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
       <div className="xl:grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-card text-card-foreground">
           <CardContent>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">Total por Método de Pago</h3>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Ventas por Método de Pago</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={paymentMethodData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {paymentMethodData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+              <BarChart data={filteredPaymentMethodData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
                 <Tooltip formatter={(value) => formatPrice(value as number)} />
                 <Legend />
-              </PieChart>
+                <Bar dataKey="cash" name="Efectivo" fill="#0088FE" />
+                <Bar dataKey="transfer" name="Transferencia" fill="#00C49F" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
         <Card className="bg-card text-card-foreground">
           <CardContent>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">Ventas por Día</h3>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Ventas Totales por Día</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={filteredSalesData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -101,7 +86,7 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
                 <YAxis />
                 <Tooltip formatter={(value) => formatPrice(value as number)} />
                 <Legend />
-                <Line type="monotone" dataKey="total" stroke="#8884d8" activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="total" name="Total" stroke="#8884d8" activeDot={{ r: 8 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>

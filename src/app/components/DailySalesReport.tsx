@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import DatePicker from './DatePicker'
 import { ArrowUpDown } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { utcToZonedTime } from 'date-fns-tz'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -56,7 +58,8 @@ export default function DailySalesReport() {
   }, [dailySales, searchTerm])
 
   const fetchDailySales = async (date: Date) => {
-    const formattedDate = date.toISOString().split('T')[0];
+    const argentinaDate = utcToZonedTime(date, 'America/Argentina/Buenos_Aires')
+    const formattedDate = format(argentinaDate, 'yyyy-MM-dd');
     const { data, error } = await supabase
       .rpc('get_daily_sales_report', { 
         report_date: formattedDate,
@@ -92,6 +95,11 @@ export default function DailySalesReport() {
         label: 'Cantidad Vendida',
         data: paginatedSales.map(sale => sale.quantity_sold),
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
+      },
+      {
+        label: 'Stock Restante',
+        data: paginatedSales.map(sale => sale.remaining_stock),
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
       }
     ],
   }
@@ -107,6 +115,11 @@ export default function DailySalesReport() {
         text: 'Ventas Diarias y Stock Restante',
       },
     },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
   }
 
   const toggleSortOrder = () => {

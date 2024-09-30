@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Loader2, Search, Trash2 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
+import { zonedTimeToUtc } from 'date-fns-tz'
 
 interface AddSaleFormProps {
   products: Product[]
@@ -92,9 +93,17 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
       error: userError,
     } = await supabase.auth.getUser();
 
+    const now = new Date()
+    const argentinaTime = zonedTimeToUtc(now, 'America/Argentina/Buenos_Aires')
+
     const { data: saleData, error: saleError } = await supabase
       .from('sales')
-      .insert([{ total: totalSale, user_id: user?.id, payment_method: paymentMethod }])
+      .insert([{
+        total: totalSale,
+        user_id: user?.id,
+        payment_method: paymentMethod,
+        created_at: argentinaTime.toISOString() // Usar la hora de Argentina
+      }])
       .select()
 
     if (saleError) {
@@ -200,18 +209,18 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
               </div>
             )}
             <div className="space-y-2">
-            <h3 className="font-semibold">Método de pago:</h3>
-            <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'cash' | 'transfer')}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="cash" id="cash" />
-                <Label htmlFor="cash">Efectivo</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="transfer" id="transfer" />
-                <Label htmlFor="transfer">Transferencia</Label>
-              </div>
-            </RadioGroup>
-          </div>
+              <h3 className="font-semibold">Método de pago:</h3>
+              <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'cash' | 'transfer')}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="cash" id="cash" />
+                  <Label htmlFor="cash">Efectivo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="transfer" id="transfer" />
+                  <Label htmlFor="transfer">Transferencia</Label>
+                </div>
+              </RadioGroup>
+            </div>
             {saleItems.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold">Productos seleccionados:</h3>
@@ -229,7 +238,7 @@ export default function AddSaleForm({ products, refreshData }: AddSaleFormProps)
                           min="1"
                           max={product?.stock}
                         />
-                        
+
                         <label htmlFor="price">Precio unitario</label>
                         <Input
                           type="number"

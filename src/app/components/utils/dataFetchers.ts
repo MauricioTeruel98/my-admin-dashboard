@@ -2,9 +2,8 @@ import useSWR from "swr";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Product, Sale, SalesData } from "../../types";
 import { toast } from "react-hot-toast";
-import { parseISO, format } from 'date-fns'
-import { utcToZonedTime } from 'date-fns-tz'
-
+import { parseISO, format } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 
 // Función fetcher genérica
 const fetcher = (supabase: SupabaseClient) => async (key: string) => {
@@ -111,8 +110,17 @@ export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
     console.error("Error al obtener ventas:", error);
     return [];
   }
+
+  // Convertir las fechas a la zona horaria de Argentina
   return data.map((sale) => ({
     ...sale,
+    created_at: format(
+      utcToZonedTime(
+        parseISO(sale.created_at),
+        "America/Argentina/Buenos_Aires"
+      ),
+      "yyyy-MM-dd HH:mm:ss"
+    ),
     items: sale.product_sale.map(
       (item: { products: Product; quantity: number }) => ({
         product: item.products,
@@ -123,60 +131,86 @@ export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
   }));
 }
 
+
 // Añadir una nueva función para obtener los totales por método de pago
 export async function fetchPaymentMethodTotals(
   supabase: SupabaseClient
-): Promise<{ cash: number; transfer: number }> {
+): Promise<{ date: string; cash: number; transfer: number }[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("sales")
-    .select("payment_method, total")
-    .eq("user_id", user?.id);
+    .select("created_at, payment_method, total")
+    .eq("user_id", user?.id)
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Error al obtener totales por método de pago:", error);
-    return { cash: 0, transfer: 0 };
-  }
-
-  return data.reduce(
-    (acc, sale) => {
-      if (sale.payment_method === "cash") {
-        acc.cash += sale.total;
-      } else if (sale.payment_method === "transfer") {
-        acc.transfer += sale.total;
-      }
-      return acc;
-    },
-    { cash: 0, transfer: 0 }
-  );
-}
-
-export async function fetchSalesData(supabase: SupabaseClient): Promise<SalesData[]> {
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  const { data, error } = await supabase
-    .from('sales')
-    .select('created_at, total')
-    .eq('user_id', user?.id)
-    .order('created_at', { ascending: true })
-
-  if (error) {
-    console.error('Error al obtener datos de ventas:', error)
-    toast.error('No se pudieron obtener los datos de ventas')
-    return []
+    return [];
   }
 
   const groupedData = data.reduce((acc, sale) => {
-    const date = format(utcToZonedTime(parseISO(sale.created_at), 'America/Argentina/Buenos_Aires'), 'yyyy-MM-dd')
+    const date = format(
+      utcToZonedTime(
+        parseISO(sale.created_at),
+        "America/Argentina/Buenos_Aires"
+      ),
+      "yyyy-MM-dd"
+    );
     if (!acc[date]) {
-      acc[date] = 0
+      acc[date] = { cash: 0, transfer: 0 };
     }
-    acc[date] += sale.total
-    return acc
-  }, {} as Record<string, number>)
+    if (sale.payment_method === "cash") {
+      acc[date].cash += sale.total;
+    } else if (sale.payment_method === "transfer") {
+      acc[date].transfer += sale.total;
+    }
+    return acc;
+  }, {} as Record<string, { cash: number; transfer: number }>);
 
-  return Object.entries(groupedData).map(([date, total]) => ({ date, total }))
+  return Object.entries(groupedData).map(([date, totals]) => ({
+    date,
+    cash: totals.cash,
+    transfer: totals.transfer,
+  }));
+}
+
+export async function fetchSalesData(
+  supabase: SupabaseClient
+): Promise<SalesData[]> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("sales")
+    .select("created_at, total")
+    .eq("user_id", user?.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error al obtener datos de ventas:", error);
+    toast.error("No se pudieron obtener los datos de ventas");
+    return [];
+  }
+
+  const groupedData = data.reduce((acc, sale) => {
+    const date = format(
+      utcToZonedTime(
+        parseISO(sale.created_at),
+        "America/Argentina/Buenos_Aires"
+      ),
+      "yyyy-MM-dd"
+    );
+    if (!acc[date]) {
+      acc[date] = 0;
+    }
+    acc[date] += sale.total;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(groupedData).map(([date, total]) => ({ date, total }));
 }
 
 export async function updateProductStock(
