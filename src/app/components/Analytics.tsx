@@ -1,12 +1,9 @@
-'use client'
-
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Product, SalesData } from '../types'
 import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
-import DailySalesReport from './DailySalesReport'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
 import { fetchPaymentMethodTotals } from './utils/dataFetchers'
 import { supabase } from '@/supabase/supabase'
@@ -29,16 +26,6 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
   }, [])
 
   const filteredSalesData = salesData.slice(-parseInt(timeRange))
-
-  const productStockData = products.map(p => ({
-    name: p.name,
-    stock: p.stock
-  }))
-
-  const topSellingProducts = products
-    .sort((a, b) => b.stock - a.stock)
-    .slice(0, 5)
-    .map(p => ({ name: p.name, stock: p.stock }))
 
   const totalSales = filteredSalesData.reduce((sum, day) => sum + day.total, 0)
   const averageSales = totalSales / filteredSalesData.length
@@ -79,7 +66,7 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
       </div>
 
       <div className="xl:grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="bg-card text-card-foreground">
+        <Card className="bg-card text-card-foreground">
           <CardContent>
             <h3 className="text-lg font-semibold mb-2 text-foreground">Total por Método de Pago</h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -112,42 +99,10 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip formatter={(value) => formatPrice(value as number)} />
                 <Legend />
                 <Line type="monotone" dataKey="total" stroke="#8884d8" activeDot={{ r: 8 }} />
               </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card text-card-foreground">
-          <CardContent>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">Stock de Productos</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={productStockData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="stock" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card text-card-foreground md:col-span-2 mb-20">
-          <CardContent>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">Top 5 Productos más Vendidos</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topSellingProducts} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="stock" fill="#8884d8" />
-              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

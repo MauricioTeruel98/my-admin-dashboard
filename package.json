@@ -27,7 +27,8 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
-    "date-fns": "^4.1.0",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.0",
     "framer-motion": "^11.5.4",
     "lucide-react": "^0.439.0",
     "mercadopago": "^2.0.15",
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",
+    "@types/date-fns": "^2.5.3",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

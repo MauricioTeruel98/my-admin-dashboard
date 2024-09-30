@@ -2,6 +2,9 @@ import useSWR from "swr";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Product, Sale, SalesData } from "../../types";
 import { toast } from "react-hot-toast";
+import { parseISO, format } from 'date-fns'
+import { utcToZonedTime } from 'date-fns-tz'
+
 
 // Función fetcher genérica
 const fetcher = (supabase: SupabaseClient) => async (key: string) => {
@@ -150,36 +153,30 @@ export async function fetchPaymentMethodTotals(
   );
 }
 
-export async function fetchSalesData(
-  supabase: SupabaseClient
-): Promise<SalesData[]> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+export async function fetchSalesData(supabase: SupabaseClient): Promise<SalesData[]> {
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
   const { data, error } = await supabase
-    .from("sales")
-    .select("created_at, total")
-    .eq("user_id", user?.id)
-    .order("created_at", { ascending: true });
-  // No need to add a where clause, RLS will handle it
+    .from('sales')
+    .select('created_at, total')
+    .eq('user_id', user?.id)
+    .order('created_at', { ascending: true })
 
   if (error) {
-    console.error("Error al obtener datos de ventas:", error);
-    toast.error("No se pudieron obtener los datos de ventas");
-    return [];
+    console.error('Error al obtener datos de ventas:', error)
+    toast.error('No se pudieron obtener los datos de ventas')
+    return []
   }
 
   const groupedData = data.reduce((acc, sale) => {
-    const date = new Date(sale.created_at).toLocaleDateString();
+    const date = format(utcToZonedTime(parseISO(sale.created_at), 'America/Argentina/Buenos_Aires'), 'yyyy-MM-dd')
     if (!acc[date]) {
-      acc[date] = 0;
+      acc[date] = 0
     }
-    acc[date] += sale.total;
-    return acc;
-  }, {} as Record<string, number>);
+    acc[date] += sale.total
+    return acc
+  }, {} as Record<string, number>)
 
-  return Object.entries(groupedData).map(([date, total]) => ({ date, total }));
+  return Object.entries(groupedData).map(([date, total]) => ({ date, total }))
 }
 
 export async function updateProductStock(
