@@ -91,6 +91,9 @@ export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
   const { data, error } = await supabase
     .from("sales")
     .select(
@@ -104,6 +107,7 @@ export async function fetchSales(supabase: SupabaseClient): Promise<Sale[]> {
     `
     )
     .eq("user_id", user?.id)
+    .gte("created_at", tenDaysAgo.toISOString())
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -139,11 +143,21 @@ export async function fetchPaymentMethodTotals(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // Calcular la fecha de hace 10 días
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
   const { data, error } = await supabase
     .from("sales")
     .select("created_at, payment_method, total")
     .eq("user_id", user?.id)
+    .gte("created_at", tenDaysAgo.toISOString())
     .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error al obtener totales por método de pago:", error);
+    return [];
+  }
 
   if (error) {
     console.error("Error al obtener totales por método de pago:", error);
@@ -183,10 +197,15 @@ export async function fetchSalesData(
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
+
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
   const { data, error } = await supabase
     .from("sales")
     .select("created_at, total")
     .eq("user_id", user?.id)
+    .gte("created_at", tenDaysAgo.toISOString())
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -209,6 +228,8 @@ export async function fetchSalesData(
     acc[date] += sale.total;
     return acc;
   }, {} as Record<string, number>);
+
+  console.log(groupedData);
 
   return Object.entries(groupedData).map(([date, total]) => ({ date, total }));
 }

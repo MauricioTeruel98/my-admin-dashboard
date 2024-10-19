@@ -14,7 +14,7 @@ interface AnalyticsProps {
 }
 
 export default function Analytics({ salesData, products }: AnalyticsProps) {
-  const [timeRange, setTimeRange] = useState('7')
+  const [timeRange, setTimeRange] = useState('10')
   const [paymentMethodData, setPaymentMethodData] = useState<{ date: string; cash: number; transfer: number }[]>([])
 
   useEffect(() => {
@@ -43,9 +43,10 @@ export default function Analytics({ salesData, products }: AnalyticsProps) {
             <SelectValue placeholder="Seleccionar rango" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7">Últimos 7 días</SelectItem>
+          <SelectItem value="10">Últimos 10 días</SelectItem>
+            {/*<SelectItem value="7">Últimos 7 días</SelectItem>
             <SelectItem value="30">Últimos 30 días</SelectItem>
-            <SelectItem value="90">Últimos 90 días</SelectItem>
+            <SelectItem value="90">Últimos 90 días</SelectItem> */}
           </SelectContent>
         </Select>
 
